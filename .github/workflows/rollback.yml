@@ -1,0 +1,33 @@
+name: Roll back IIS release
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to roll back
+        required: true
+        type: choice
+        options: [staging, production]
+      release_id:
+        description: Previously deployed Git commit SHA
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    runs-on: [self-hosted, Windows, X64, wiseline-portal-deploy]
+    timeout-minutes: 10
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ vars.PUBLIC_BASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Switch IIS to retained release
+        shell: powershell
+        run: ./scripts/Rollback-IisRelease.ps1 -SiteName '${{ vars.IIS_SITE_NAME }}' -AppPoolName '${{ vars.APP_POOL_NAME }}' -ReleaseRoot '${{ vars.RELEASE_ROOT }}' -ReleaseId '${{ inputs.release_id }}' -HealthUrl '${{ vars.HEALTH_URL }}'

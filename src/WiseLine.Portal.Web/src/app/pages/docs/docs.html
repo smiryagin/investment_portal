@@ -1,0 +1,140 @@
+<section class="page-header docs-header">
+  <div class="shell">
+    <span class="eyebrow">Connection guide</span>
+    <h1 class="page-title">Connect in a few careful steps.</h1>
+    <p class="lead">
+      Create a named token in the portal, store it in an environment variable, and let your MCP
+      client read it without placing the secret in source control.
+    </p>
+  </div>
+</section>
+
+<section class="docs-section">
+  <div class="shell docs-layout">
+    <aside class="docs-sidebar">
+      <span>Choose your client</span>
+      <button type="button" [class.active]="selected() === 'codex'" (click)="select('codex')">
+        Codex
+      </button>
+      <button type="button" [class.active]="selected() === 'claude'" (click)="select('claude')">
+        Claude Code
+      </button>
+      <button type="button" [class.active]="selected() === 'other'" (click)="select('other')">
+        Other MCP client
+      </button>
+    </aside>
+
+    <div class="docs-content">
+      <div class="security-callout">
+        <strong>Before you begin</strong>
+        <p>
+          Never paste your access token into a repository, shared message, or screenshot. The portal
+          shows the complete token only once.
+        </p>
+      </div>
+
+      @if (selected() === 'codex') {
+        <article>
+          <span class="step-label">Step 1</span>
+          <h2>Store the token for Codex</h2>
+          <p>
+            On Windows, open PowerShell and set the token as a User environment variable. Replace
+            the placeholder locally.
+          </p>
+          <pre><code>[Environment]::SetEnvironmentVariable(
+  'INVESTMENTS_MCP_TOKEN',
+  '&lt;paste-token-here&gt;',
+  'User'
+)</code></pre>
+          <p class="small-note">
+            Close and reopen Codex after setting the variable so the desktop process inherits it.
+          </p>
+        </article>
+        <article>
+          <span class="step-label">Step 2</span>
+          <h2>Add the remote MCP server</h2>
+          <div class="code-block">
+            <pre><code>{{ codexCommand }}</code></pre>
+            <button type="button" (click)="copy(codexCommand)">
+              {{ copied() ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+          <p>
+            Run <code>codex mcp list</code>, restart Codex, then open MCP servers in Settings to
+            confirm the connection.
+          </p>
+          <a
+            class="reference-link"
+            href="https://developers.openai.com/codex/mcp"
+            target="_blank"
+            rel="noopener"
+            >Open official Codex MCP documentation ↗</a
+          >
+        </article>
+      }
+
+      @if (selected() === 'claude') {
+        <article>
+          <span class="step-label">Step 1</span>
+          <h2>Store the token</h2>
+          <p>
+            Set <code>INVESTMENTS_MCP_TOKEN</code> in your operating-system environment. Do not
+            commit the token to <code>.mcp.json</code>.
+          </p>
+        </article>
+        <article>
+          <span class="step-label">Step 2</span>
+          <h2>Add a project or user MCP configuration</h2>
+          <div class="code-block">
+            <pre><code>{{ claudeConfig }}</code></pre>
+            <button type="button" (click)="copy(claudeConfig)">
+              {{ copied() ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+          <p>
+            Claude Code expands the environment variable when it loads the MCP configuration. Use
+            <code>/mcp</code> to inspect the connection.
+          </p>
+          <a
+            class="reference-link"
+            href="https://docs.anthropic.com/en/docs/claude-code/mcp"
+            target="_blank"
+            rel="noopener"
+            >Open official Claude Code MCP documentation ↗</a
+          >
+        </article>
+      }
+
+      @if (selected() === 'other') {
+        <article>
+          <span class="step-label">Connection details</span>
+          <h2>Use Streamable HTTP with bearer authentication</h2>
+          <p>Client configuration formats vary. These are the values your client needs:</p>
+          <div class="code-block">
+            <pre><code>{{ genericConfig }}</code></pre>
+            <button type="button" (click)="copy(genericConfig)">
+              {{ copied() ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+          <p>
+            If the client supports environment-variable substitution, use it instead of inserting
+            the token directly.
+          </p>
+        </article>
+      }
+
+      <article class="test-section">
+        <span class="step-label">Final check</span>
+        <h2>Ask the server what it can do</h2>
+        <p>After connecting, start with a low-risk read request such as:</p>
+        <blockquote>
+          List my portfolios and briefly explain which investment tools are available.
+        </blockquote>
+        <p>
+          The Investment MCP service is read-oriented for market data and portfolio analysis. It
+          does not place brokerage trades.
+        </p>
+      </article>
+    </div>
+  </div>
+</section>

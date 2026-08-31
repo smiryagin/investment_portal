@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [staging, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+          cache: npm
+          cache-dependency-path: |
+            src/WiseLine.Portal.Web/package-lock.json
+            tools/mcp-wiselineportal-db/package-lock.json
+
+      - name: Restore and build .NET
+        shell: pwsh
+        run: |
+          dotnet restore WiseLine.Portal.sln
+          dotnet build WiseLine.Portal.sln --configuration Release --no-restore -warnaserror
+
+      - name: Test .NET
+        run: dotnet test WiseLine.Portal.sln --configuration Release --no-build --no-restore
+
+      - name: Validate Angular
+        working-directory: src/WiseLine.Portal.Web
+        shell: pwsh
+        run: |
+          npm ci
+          npm audit --audit-level=high
+          npm run format:check
+          npm run test:ci
+          npm run build
+
+      - name: Validate database MCP development tool
+        working-directory: tools/mcp-wiselineportal-db
+        shell: pwsh
+        run: |
+          npm ci
+          npm audit --audit-level=high
+          npm run typecheck
+          npm test
+          npm run build

@@ -1,0 +1,127 @@
+<section class="dashboard-page">
+  <div class="shell account-shell">
+    <div class="dashboard-heading">
+      <div>
+        <span class="eyebrow">Settings</span>
+        <h1>Account</h1>
+        <p>Manage your identity, subscription, and promotion codes.</p>
+      </div>
+    </div>
+    @if (error()) {
+      <div class="form-error account-message" role="alert">{{ error() }}</div>
+    }
+    @if (success()) {
+      <div class="notice success account-message" role="status">{{ success() }}</div>
+    }
+    <div class="account-grid">
+      <section class="card account-card">
+        <span class="section-label">Profile</span>
+        <div class="profile-row">
+          <span class="profile-avatar">{{
+            (auth.user()?.displayName ?? 'W').slice(0, 1).toUpperCase()
+          }}</span>
+          <div>
+            <strong>{{ auth.user()?.displayName }}</strong
+            ><span>{{ auth.user()?.email }}</span>
+          </div>
+        </div>
+        <dl>
+          <div>
+            <dt>Email login</dt>
+            <dd>Enabled</dd>
+          </div>
+          <div>
+            <dt>Google login</dt>
+            <dd>{{ auth.user()?.hasGoogleLogin ? 'Connected' : 'Not connected' }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="card account-card subscription-card">
+        <span class="section-label">Subscription</span>
+        @if (loading()) {
+          <div class="loading-lines"><span></span><span></span></div>
+        } @else if (subscription(); as plan) {
+          <div class="plan-heading">
+            <div>
+              <span class="status">{{ plan.status }}</span>
+              <h2>WiseLine Investment MCP</h2>
+            </div>
+            <div class="plan-price"><strong>$10</strong><span>/ month</span></div>
+          </div>
+          <dl>
+            <div>
+              <dt>Access</dt>
+              <dd>{{ plan.isEntitled ? 'Active' : 'Payment setup required' }}</dd>
+            </div>
+            <div>
+              <dt>
+                {{
+                  plan.currentPeriodEndsAt
+                    ? 'Current period ends'
+                    : plan.trialEndsAt
+                      ? 'Free trial ends'
+                      : 'Free trial'
+                }}
+              </dt>
+              <dd>
+                {{
+                  (plan.currentPeriodEndsAt ?? plan.trialEndsAt)
+                    ? (plan.currentPeriodEndsAt ?? plan.trialEndsAt | date: 'mediumDate')
+                    : 'Starts after checkout'
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt>Payment provider</dt>
+              <dd>{{ plan.paymentProvider ?? 'Choose below' }}</dd>
+            </div>
+          </dl>
+          @if (plan.status === 'Pending') {
+            <div class="checkout-actions">
+              <button
+                class="button"
+                type="button"
+                (click)="checkout('Stripe')"
+                [disabled]="checkoutProvider() !== null"
+              >
+                {{ checkoutProvider() === 'Stripe' ? 'Opening…' : 'Pay by card' }}</button
+              ><button
+                class="button button-secondary"
+                type="button"
+                (click)="checkout('PayPal')"
+                [disabled]="checkoutProvider() !== null"
+              >
+                {{ checkoutProvider() === 'PayPal' ? 'Opening…' : 'Pay with PayPal' }}
+              </button>
+            </div>
+            <p class="payment-note">
+              Your 14-day trial begins only after a payment method is approved. Provider credentials
+              must be configured in this environment.
+            </p>
+          }
+        }
+      </section>
+
+      <section class="card account-card promotion-card">
+        <span class="section-label">Promotion</span>
+        <h2>Have a promotion code?</h2>
+        <p>Apply it once to an eligible trial. The new trial end date is recorded immediately.</p>
+        <form [formGroup]="promotionForm" (ngSubmit)="redeem()">
+          <div class="field">
+            <label for="promotionCode">Promotion code</label
+            ><input
+              id="promotionCode"
+              formControlName="code"
+              autocomplete="off"
+              placeholder="ENTER-CODE"
+            />
+          </div>
+          <button class="button button-secondary" type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'Applying…' : 'Apply code' }}
+          </button>
+        </form>
+      </section>
+    </div>
+  </div>
+</section>

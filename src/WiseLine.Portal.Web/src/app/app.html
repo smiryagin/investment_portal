@@ -1,0 +1,83 @@
+<header class="site-header">
+  <div class="shell header-inner">
+    <a class="brand" routerLink="/" (click)="closeMenu()" aria-label="WiseLine Trade home">
+      <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+      <span>WiseLine <strong>Trade</strong></span>
+    </a>
+
+    <button
+      class="menu-button"
+      type="button"
+      (click)="toggleMenu()"
+      [attr.aria-expanded]="menuOpen()"
+      aria-controls="primary-navigation"
+      aria-label="Toggle navigation"
+    >
+      <span></span><span></span><span></span>
+    </button>
+
+    <nav
+      id="primary-navigation"
+      class="primary-nav"
+      [class.open]="menuOpen()"
+      aria-label="Primary navigation"
+    >
+      @if (auth.isAuthenticated()) {
+        <a routerLink="/dashboard" routerLinkActive="active" (click)="closeMenu()">Dashboard</a>
+        <a routerLink="/portfolios" routerLinkActive="active" (click)="closeMenu()">Portfolios</a>
+        <a routerLink="/mcp-access" routerLinkActive="active" (click)="closeMenu()">MCP access</a>
+        <a routerLink="/docs" routerLinkActive="active" (click)="closeMenu()">Docs</a>
+        <a
+          class="account-link"
+          routerLink="/account"
+          routerLinkActive="active"
+          (click)="closeMenu()"
+        >
+          {{ auth.user()?.displayName }}
+        </a>
+        <button class="nav-action" type="button" (click)="logout()">Sign out</button>
+      } @else {
+        <a routerLink="/pricing" routerLinkActive="active" (click)="closeMenu()">Pricing</a>
+        <a routerLink="/docs" routerLinkActive="active" (click)="closeMenu()">How it works</a>
+        <a routerLink="/login" routerLinkActive="active" (click)="closeMenu()">Log in</a>
+        <a class="button button-small" routerLink="/register" (click)="closeMenu()">Start free</a>
+      }
+    </nav>
+  </div>
+</header>
+
+<main>
+  <router-outlet />
+</main>
+
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div>
+      <a class="brand footer-brand" routerLink="/">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>WiseLine <strong>Trade</strong></span>
+      </a>
+      <p>Investment context for the AI tools you already use.</p>
+    </div>
+    <div>
+      <h2>Product</h2>
+      <a routerLink="/pricing">Pricing</a>
+      <a routerLink="/docs">Connection guide</a>
+    </div>
+    <div>
+      <h2>Account</h2>
+      <a routerLink="/login">Log in</a>
+      <a routerLink="/register">Start trial</a>
+    </div>
+    <div>
+      <h2>Important</h2>
+      <p class="disclaimer">
+        WiseLine Trade provides software tools, not investment advice. Investing involves risk.
+      </p>
+    </div>
+  </div>
+  <div class="shell footer-bottom">
+    <span>© 2026 WiseLine Trade</span>
+    <span>wiselinetrade.com</span>
+  </div>
+</footer>

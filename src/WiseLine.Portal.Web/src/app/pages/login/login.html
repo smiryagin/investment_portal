@@ -1,0 +1,59 @@
+<section class="auth-page">
+  <div class="auth-intro">
+    <span class="eyebrow">Welcome back</span>
+    <h1>Return to your investment workspace.</h1>
+    <p>Manage your MCP connections, subscription, and portfolio views in one place.</p>
+  </div>
+  <div class="auth-card card">
+    <div class="card-body">
+      <h2>Log in</h2>
+      <p class="auth-subtitle">Use your WiseLine account or continue with Google.</p>
+      <button
+        class="button button-secondary button-wide google-button"
+        type="button"
+        (click)="googleLogin()"
+      >
+        Continue with Google
+      </button>
+      <div class="divider"><span>or use email</span></div>
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field">
+          <label for="email">Email address</label>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            inputmode="email"
+          />
+          @if (form.controls.email.touched && form.controls.email.invalid) {
+            <span class="hint form-field-error">Enter a valid email address.</span>
+          }
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+          />
+        </div>
+        <label class="check-row"
+          ><input type="checkbox" formControlName="rememberMe" /><span
+            >Keep me signed in on this device</span
+          ></label
+        >
+        @if (error()) {
+          <div class="form-error" role="alert">{{ error() }}</div>
+        }
+        <button class="button button-wide" type="submit" [disabled]="submitting()">
+          {{ submitting() ? 'Logging in…' : 'Log in' }}
+        </button>
+      </form>
+      <p class="auth-switch">
+        New to WiseLine? <a routerLink="/register">Start your free trial</a>
+      </p>
+    </div>
+  </div>
+</section>

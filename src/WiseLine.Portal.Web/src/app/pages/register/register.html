@@ -1,0 +1,62 @@
+<section class="register-page">
+  <div class="trial-panel">
+    <span class="eyebrow light">14-day free trial</span>
+    <h1>Bring better context to every portfolio conversation.</h1>
+    <p>Create one account for your subscription, MCP access tokens, and portfolio views.</p>
+    <ul>
+      <li>Full product access during the trial</li>
+      <li>$10 per month after the trial</li>
+      <li>Cancel before billing begins</li>
+      <li>One trial per user and payment method</li>
+    </ul>
+  </div>
+
+  <div class="register-form">
+    <h2>Create your account</h2>
+    <p>Use email now. You can also link Google login.</p>
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field">
+        <label for="displayName">Your name</label
+        ><input id="displayName" formControlName="displayName" autocomplete="name" />
+      </div>
+      <div class="field">
+        <label for="email">Email address</label
+        ><input
+          id="email"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          inputmode="email"
+        />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          autocomplete="new-password"
+        />
+        <span class="hint"
+          >At least 12 characters with uppercase, lowercase, number, and symbol.</span
+        >
+      </div>
+      <label class="terms-row"
+        ><input type="checkbox" formControlName="termsAccepted" /><span
+          >I agree to the Terms of Service and acknowledge the Privacy Policy and investment-risk
+          notice.</span
+        ></label
+      >
+      @if (form.touched && form.invalid) {
+        <div class="notice">Complete all fields and accept the terms to continue.</div>
+      }
+      @if (error()) {
+        <div class="form-error" role="alert">{{ error() }}</div>
+      }
+      <button class="button button-wide" type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Creating account…' : 'Start free trial' }}
+      </button>
+    </form>
+    <p class="auth-switch">Already have an account? <a routerLink="/login">Log in</a></p>
+  </div>
+</section>

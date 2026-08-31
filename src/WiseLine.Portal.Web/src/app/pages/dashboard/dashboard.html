@@ -1,0 +1,131 @@
+<section class="dashboard-page">
+  <div class="shell">
+    <div class="dashboard-heading">
+      <div>
+        <span class="eyebrow">Overview</span>
+        <h1>Hello, {{ auth.user()?.displayName }}.</h1>
+        <p>Here is the current state of your WiseLine access and portfolio context.</p>
+      </div>
+      <a class="button button-small" routerLink="/mcp-access">Manage MCP access</a>
+    </div>
+
+    @if (loading()) {
+      <div class="card loading-lines"><span></span><span></span><span></span></div>
+    } @else if (error()) {
+      <div class="form-error">{{ error() }}</div>
+    } @else if (subscription(); as plan) {
+      <div class="subscription-strip card">
+        <div>
+          <span class="status">{{ plan.status }}</span
+          ><strong>{{
+            plan.isEntitled ? 'Your investment access is active' : 'Subscription action required'
+          }}</strong>
+        </div>
+        <div class="subscription-date">
+          <span>{{
+            plan.currentPeriodEndsAt
+              ? 'Current period ends'
+              : plan.trialEndsAt
+                ? 'Trial ends'
+                : 'Trial status'
+          }}</span
+          ><strong>{{
+            (plan.currentPeriodEndsAt ?? plan.trialEndsAt)
+              ? (plan.currentPeriodEndsAt ?? plan.trialEndsAt | date: 'mediumDate')
+              : 'Awaiting payment setup'
+          }}</strong>
+        </div>
+        <a routerLink="/account">View account <span aria-hidden="true">→</span></a>
+      </div>
+    }
+
+    <div class="metric-grid metrics">
+      <article class="card metric-card">
+        <span class="metric-label">Portfolio value</span
+        ><strong class="metric-value">{{
+          totalValue() | currency: 'USD' : 'symbol' : '1.0-0'
+        }}</strong
+        ><span class="metric-note">Across {{ portfolios().length }} portfolios</span>
+      </article>
+      <article class="card metric-card">
+        <span class="metric-label">Today</span
+        ><strong
+          class="metric-value"
+          [class.positive]="totalDayChange() >= 0"
+          [class.negative]="totalDayChange() < 0"
+          >{{ totalDayChange() | currency: 'USD' : 'symbol' : '1.0-0' }}</strong
+        ><span class="metric-note">Latest available market values</span>
+      </article>
+      <article class="card metric-card">
+        <span class="metric-label">Positions</span
+        ><strong class="metric-value">{{ positionCount() | number }}</strong
+        ><span class="metric-note">Available as MCP context</span>
+      </article>
+    </div>
+
+    <div class="content-grid">
+      <section class="card portfolio-panel">
+        <div class="panel-heading">
+          <div>
+            <span>Portfolios</span>
+            <h2>Your investment context</h2>
+          </div>
+          <a routerLink="/portfolios">View all</a>
+        </div>
+        @if (portfolioLoading()) {
+          <div class="loading-lines"><span></span><span></span><span></span></div>
+        } @else if (portfolioError()) {
+          <div class="integration-state">
+            <strong>Investment data connection pending</strong>
+            <p>{{ portfolioError() }}</p>
+            <a routerLink="/docs">Review connection model</a>
+          </div>
+        } @else if (portfolios().length === 0) {
+          <div class="empty-state">
+            <h2>No portfolios yet</h2>
+            <p>
+              Create a portfolio through the Investment MCP server, then it will appear here
+              automatically.
+            </p>
+            <a class="button button-secondary" routerLink="/docs">Connect an AI client</a>
+          </div>
+        } @else {
+          <div class="portfolio-list">
+            @for (portfolio of portfolios().slice(0, 4); track portfolio.id) {
+              <a [routerLink]="['/portfolios', portfolio.id]">
+                <span class="portfolio-avatar">{{ portfolio.name.slice(0, 1).toUpperCase() }}</span>
+                <span
+                  ><strong>{{ portfolio.name }}</strong
+                  ><small
+                    >{{ portfolio.strategyName ?? 'No strategy assigned' }} ·
+                    {{ portfolio.positionCount }} positions</small
+                  ></span
+                >
+                <span class="portfolio-value"
+                  ><strong>{{
+                    portfolio.marketValue | currency: 'USD' : 'symbol' : '1.0-0'
+                  }}</strong
+                  ><small
+                    [class.positive]="portfolio.dayChange >= 0"
+                    [class.negative]="portfolio.dayChange < 0"
+                    >{{ portfolio.dayChangePercent | number: '1.1-1' }}%</small
+                  ></span
+                >
+              </a>
+            }
+          </div>
+        }
+      </section>
+
+      <aside class="card next-step">
+        <span class="eyebrow">Recommended next step</span>
+        <h2>Create a dedicated token for each AI client.</h2>
+        <p>
+          Named tokens make activity easier to recognize and let you revoke one connection without
+          interrupting another.
+        </p>
+        <a class="button button-secondary button-wide" routerLink="/mcp-access">Open MCP access</a>
+      </aside>
+    </div>
+  </div>
+</section>

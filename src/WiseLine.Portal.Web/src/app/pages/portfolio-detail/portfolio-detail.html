@@ -1,0 +1,98 @@
+<section class="dashboard-page">
+  <div class="shell">
+    <a class="back-link" routerLink="/portfolios">← All portfolios</a>
+    @if (loading()) {
+      <div class="card loading-lines"><span></span><span></span><span></span></div>
+    } @else if (error()) {
+      <div class="card empty-state">
+        <h2>Portfolio unavailable</h2>
+        <p>{{ error() }}</p>
+      </div>
+    } @else if (portfolio(); as item) {
+      <div class="portfolio-heading">
+        <div>
+          <span class="eyebrow">{{ item.strategyName ?? 'Portfolio' }}</span>
+          <h1>{{ item.name }}</h1>
+          <p>{{ item.description ?? 'No portfolio description has been added.' }}</p>
+        </div>
+        <div class="headline-value">
+          <span>Market value</span
+          ><strong>{{ item.marketValue | currency: 'USD' : 'symbol' : '1.0-0' }}</strong>
+        </div>
+      </div>
+      <div class="metric-grid">
+        <article class="card metric-card">
+          <span class="metric-label">Total cost</span
+          ><strong class="metric-value">{{
+            item.totalCost | currency: 'USD' : 'symbol' : '1.0-0'
+          }}</strong>
+        </article>
+        <article class="card metric-card">
+          <span class="metric-label">Unrealized gain</span
+          ><strong
+            class="metric-value"
+            [class.positive]="item.unrealizedGain >= 0"
+            [class.negative]="item.unrealizedGain < 0"
+            >{{ item.unrealizedGain | currency: 'USD' : 'symbol' : '1.0-0' }}</strong
+          >
+        </article>
+        <article class="card metric-card">
+          <span class="metric-label">Return</span
+          ><strong
+            class="metric-value"
+            [class.positive]="item.unrealizedGainPercent >= 0"
+            [class.negative]="item.unrealizedGainPercent < 0"
+            >{{ item.unrealizedGainPercent | number: '1.1-1' }}%</strong
+          >
+        </article>
+      </div>
+      <section class="card positions-panel">
+        <div class="panel-title">
+          <div>
+            <span>Positions</span>
+            <h2>Current holdings</h2>
+          </div>
+          <small>{{ item.positions.length }} positions</small>
+        </div>
+        @if (item.positions.length === 0) {
+          <div class="empty-state"><p>This portfolio has no positions yet.</p></div>
+        } @else {
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Quantity</th>
+                  <th>Average</th>
+                  <th>Price</th>
+                  <th>Market value</th>
+                  <th>Gain</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (position of item.positions; track position.id) {
+                  <tr>
+                    <td>
+                      <strong>{{ position.symbol }}</strong
+                      ><small>{{ position.description }}</small>
+                    </td>
+                    <td>{{ position.quantity | number: '1.0-4' }}</td>
+                    <td>{{ position.averagePrice | currency: 'USD' }}</td>
+                    <td>{{ position.currentPrice | currency: 'USD' }}</td>
+                    <td>{{ position.marketValue | currency: 'USD' : 'symbol' : '1.0-0' }}</td>
+                    <td
+                      [class.positive]="position.unrealizedGain >= 0"
+                      [class.negative]="position.unrealizedGain < 0"
+                    >
+                      {{ position.unrealizedGainPercent | number: '1.1-1' }}%
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+  </div>
+</section>

@@ -1,0 +1,130 @@
+name: Build and deploy portal
+
+on:
+  push:
+    branches: [staging, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wiseline-portal-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref_name == 'staging' || github.ref_name == 'main'
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+          cache: npm
+          cache-dependency-path: src/WiseLine.Portal.Web/package-lock.json
+
+      - name: Test and build Angular
+        working-directory: src/WiseLine.Portal.Web
+        shell: pwsh
+        run: |
+          npm ci
+          npm audit --audit-level=high
+          npm run test:ci
+          npm run build
+
+      - name: Copy Angular into API web root
+        shell: pwsh
+        run: |
+          $webRoot = 'src/WiseLine.Portal.Api/wwwroot'
+          New-Item -ItemType Directory -Path $webRoot -Force | Out-Null
+          Copy-Item -Path 'src/WiseLine.Portal.Web/dist/WiseLine.Portal.Web/browser/*' -Destination $webRoot -Recurse -Force
+
+      - name: Test and publish API
+        shell: pwsh
+        run: |
+          dotnet restore WiseLine.Portal.sln
+          dotnet build WiseLine.Portal.sln --configuration Release --no-restore -warnaserror
+          dotnet test WiseLine.Portal.sln --configuration Release --no-build --no-restore
+          dotnet restore src/WiseLine.Portal.Api/WiseLine.Portal.Api.csproj --runtime win-x64
+          dotnet publish src/WiseLine.Portal.Api/WiseLine.Portal.Api.csproj --configuration Release --runtime win-x64 --self-contained false --no-restore --output artifacts/publish
+
+      - name: Build migration bundle and immutable package
+        shell: pwsh
+        run: |
+          dotnet tool restore
+          dotnet tool run dotnet-ef migrations bundle --force --self-contained --target-runtime win-x64 --project src/WiseLine.Portal.Infrastructure/WiseLine.Portal.Infrastructure.csproj --startup-project src/WiseLine.Portal.Api/WiseLine.Portal.Api.csproj --context PortalDbContext --output artifacts/migrate.exe
+          Compress-Archive -Path 'artifacts/publish/*' -DestinationPath 'artifacts/portal.zip' -CompressionLevel Optimal
+          $hash = (Get-FileHash -LiteralPath 'artifacts/portal.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -LiteralPath 'artifacts/portal.zip.sha256' -Value "$hash  portal.zip"
+          New-Item -ItemType Directory -Path 'artifacts/scripts' -Force | Out-Null
+          Copy-Item -Path 'scripts/*.ps1' -Destination 'artifacts/scripts'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wiseline-portal-${{ github.sha }}
+          path: artifacts
+          if-no-files-found: error
+          retention-days: 30
+
+  deploy:
+    if: github.ref_name == 'staging' || github.ref_name == 'main'
+    needs: build
+    runs-on: [self-hosted, Windows, X64, wiseline-portal-deploy]
+    timeout-minutes: 20
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      url: ${{ vars.PUBLIC_BASE_URL }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: wiseline-portal-${{ github.sha }}
+          path: artifact
+
+      - name: Verify package checksum
+        shell: powershell
+        run: |
+          $expected = (Get-Content -LiteralPath 'artifact/portal.zip.sha256').Split(' ')[0]
+          $actual = (Get-FileHash -LiteralPath 'artifact/portal.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw 'Deployment package checksum mismatch.' }
+
+      - name: Write external application configuration
+        shell: powershell
+        env:
+          PORTAL_RUNTIME_DATABASE_CONNECTION_STRING: ${{ secrets.PORTAL_RUNTIME_DATABASE_CONNECTION_STRING }}
+          TRADE_DATABASE_CONNECTION_STRING: ${{ secrets.TRADE_DATABASE_CONNECTION_STRING }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_PRICE_ID: ${{ secrets.STRIPE_PRICE_ID }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
+          PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
+          PAYPAL_PLAN_ID: ${{ secrets.PAYPAL_PLAN_ID }}
+          PAYPAL_WEBHOOK_ID: ${{ secrets.PAYPAL_WEBHOOK_ID }}
+          PAYPAL_BASE_URL: ${{ vars.PAYPAL_BASE_URL }}
+          PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
+        run: ./artifact/scripts/Write-DeploymentConfig.ps1 -ConfigPath '${{ vars.CONFIG_PATH }}' -AppPoolName '${{ vars.APP_POOL_NAME }}'
+
+      - name: Back up production database
+        if: github.ref_name == 'main'
+        shell: powershell
+        env:
+          PORTAL_MIGRATION_DATABASE_CONNECTION_STRING: ${{ secrets.PORTAL_MIGRATION_DATABASE_CONNECTION_STRING }}
+        run: ./artifact/scripts/Backup-Database.ps1 -DatabaseName '${{ vars.PORTAL_DATABASE_NAME }}' -SqlServerBackupDirectory '${{ vars.SQL_BACKUP_DIRECTORY }}'
+
+      - name: Apply reviewed portal migration
+        shell: powershell
+        env:
+          PORTAL_MIGRATION_DATABASE_CONNECTION_STRING: ${{ secrets.PORTAL_MIGRATION_DATABASE_CONNECTION_STRING }}
+        run: ./artifact/migrate.exe --connection "$env:PORTAL_MIGRATION_DATABASE_CONNECTION_STRING"
+
+      - name: Deploy versioned IIS release
+        shell: powershell
+        run: ./artifact/scripts/Deploy-IisRelease.ps1 -SiteName '${{ vars.IIS_SITE_NAME }}' -AppPoolName '${{ vars.APP_POOL_NAME }}' -PackagePath './artifact/portal.zip' -ReleaseRoot '${{ vars.RELEASE_ROOT }}' -ReleaseId '${{ github.sha }}' -HealthUrl '${{ vars.HEALTH_URL }}'

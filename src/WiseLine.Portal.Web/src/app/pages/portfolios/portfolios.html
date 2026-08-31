@@ -1,0 +1,61 @@
+<section class="dashboard-page">
+  <div class="shell">
+    <div class="dashboard-heading">
+      <div>
+        <span class="eyebrow">Investment data</span>
+        <h1>Portfolios</h1>
+        <p>Portfolios created through the Investment MCP server appear here.</p>
+      </div>
+      <a class="button button-secondary button-small" routerLink="/docs">MCP connection guide</a>
+    </div>
+
+    @if (loading()) {
+      <div class="card loading-lines"><span></span><span></span><span></span></div>
+    } @else if (error()) {
+      <div class="card empty-state">
+        <h2>Investment data connection pending</h2>
+        <p>{{ error() }}</p>
+        <a class="button button-secondary" routerLink="/docs">Review the connection model</a>
+      </div>
+    } @else if (portfolios().length === 0) {
+      <div class="card empty-state">
+        <h2>No portfolios yet</h2>
+        <p>
+          Create your first portfolio with the Investment MCP tools. The portal reads it from the
+          Trade database through restricted stored procedures.
+        </p>
+        <a class="button" routerLink="/mcp-access">Set up MCP access</a>
+      </div>
+    } @else {
+      <div class="portfolio-summary">
+        <span>Total market value</span
+        ><strong>{{ totalValue() | currency: 'USD' : 'symbol' : '1.0-0' }}</strong
+        ><small>{{ portfolios().length }} portfolios</small>
+      </div>
+      <div class="portfolio-grid">
+        @for (portfolio of portfolios(); track portfolio.id) {
+          <a class="card portfolio-card" [routerLink]="['/portfolios', portfolio.id]">
+            <div class="portfolio-top">
+              <span class="portfolio-avatar">{{ portfolio.name.slice(0, 1).toUpperCase() }}</span
+              ><span class="status">{{ portfolio.positionCount }} positions</span>
+            </div>
+            <h2>{{ portfolio.name }}</h2>
+            <p>{{ portfolio.strategyName ?? 'No strategy assigned' }}</p>
+            <strong class="portfolio-value">{{
+              portfolio.marketValue | currency: 'USD' : 'symbol' : '1.0-0'
+            }}</strong>
+            <div class="portfolio-footer">
+              <span
+                [class.positive]="portfolio.dayChange >= 0"
+                [class.negative]="portfolio.dayChange < 0"
+                >{{ portfolio.dayChange | currency: 'USD' : 'symbol' : '1.0-0' }} today</span
+              ><span>{{
+                portfolio.updatedAt ? (portfolio.updatedAt | date: 'short') : 'Awaiting update'
+              }}</span>
+            </div>
+          </a>
+        }
+      </div>
+    }
+  </div>
+</section>

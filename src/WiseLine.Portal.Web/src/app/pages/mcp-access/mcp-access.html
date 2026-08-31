@@ -1,0 +1,107 @@
+<section class="dashboard-page">
+  <div class="shell">
+    <div class="dashboard-heading">
+      <div>
+        <span class="eyebrow">Secure connections</span>
+        <h1>MCP access</h1>
+        <p>Create a separate, named token for each AI client you connect.</p>
+      </div>
+      <a class="button button-secondary button-small" routerLink="/docs">Open connection guide</a>
+    </div>
+
+    @if (createdToken(); as created) {
+      <section class="created-token" role="status">
+        <div>
+          <span class="status">Created</span>
+          <h2>Copy this token now</h2>
+          <p>For security, the full value will not be shown again after you close this message.</p>
+        </div>
+        <div class="token-value">
+          <code>{{ created.token }}</code
+          ><button type="button" (click)="copyToken()">
+            {{ copied() ? 'Copied' : 'Copy token' }}
+          </button>
+        </div>
+        <button class="dismiss-button" type="button" (click)="dismissCreatedToken()">
+          I have stored it securely
+        </button>
+      </section>
+    }
+
+    @if (error()) {
+      <div class="form-error access-error" role="alert">{{ error() }}</div>
+    }
+
+    <div class="access-grid">
+      <section class="card token-list-panel">
+        <div class="panel-heading">
+          <div>
+            <span>Connections</span>
+            <h2>Your access tokens</h2>
+          </div>
+          <small>{{ tokens().length }} total</small>
+        </div>
+        @if (loading()) {
+          <div class="loading-lines"><span></span><span></span><span></span></div>
+        } @else if (tokens().length === 0) {
+          <div class="empty-state">
+            <h2>No tokens yet</h2>
+            <p>Create one for Codex, Claude, or another compatible client.</p>
+          </div>
+        } @else {
+          <div class="token-list">
+            @for (token of tokens(); track token.id) {
+              <article [class.revoked]="token.isRevoked">
+                <span class="token-icon">{{ token.displayName.slice(0, 1).toUpperCase() }}</span>
+                <div>
+                  <strong>{{ token.displayName }}</strong
+                  ><code>{{ token.prefix }}••••••••</code
+                  ><small
+                    >Created {{ token.createdAt | date: 'mediumDate' }} ·
+                    {{
+                      token.lastUsedAt
+                        ? 'Last used ' + (token.lastUsedAt | date: 'short')
+                        : 'Never used'
+                    }}</small
+                  >
+                </div>
+                @if (token.isRevoked) {
+                  <span class="status neutral">Revoked</span>
+                } @else {
+                  <button type="button" (click)="revoke(token)">Revoke</button>
+                }
+              </article>
+            }
+          </div>
+        }
+      </section>
+
+      <aside class="card create-panel">
+        <span class="eyebrow">New connection</span>
+        <h2>Create an access token</h2>
+        <p>Use a recognizable name such as “Codex laptop” or “Claude desktop.”</p>
+        <form [formGroup]="form" (ngSubmit)="create()">
+          <div class="field">
+            <label for="tokenName">Token name</label
+            ><input
+              id="tokenName"
+              formControlName="displayName"
+              maxlength="100"
+              placeholder="Codex laptop"
+            />
+          </div>
+          <button class="button button-wide" type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'Creating…' : 'Create token' }}
+          </button>
+        </form>
+        <div class="security-note">
+          <strong>Good token hygiene</strong>
+          <p>
+            Store the token in an environment variable, never in a repository. Revoke unused
+            connections promptly.
+          </p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
