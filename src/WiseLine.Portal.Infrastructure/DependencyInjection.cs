@@ -55,6 +55,7 @@ public static class DependencyInjection
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<ISubscriptionAccessService, SubscriptionAccessService>();
         services.AddScoped<ITradePortalGateway, TradePortalGateway>();
+        services.AddHostedService<TradeEntitlementSyncWorker>();
         services.AddScoped<IPaymentCheckoutService, PaymentCheckoutService>();
         services.AddScoped<IPaymentWebhookProcessor, PaymentWebhookProcessor>();
         services.AddHttpClient("Stripe", client => client.Timeout = TimeSpan.FromSeconds(20));
@@ -66,6 +67,9 @@ public static class DependencyInjection
             .Validate(
                 value => !value.Enabled || !string.IsNullOrWhiteSpace(configuration.GetConnectionString("TradeDatabase")),
                 "ConnectionStrings:TradeDatabase is required when TradeDatabase:Enabled is true.")
+            .Validate(
+                value => value.EntitlementSyncPollSeconds is >= 5 and <= 300,
+                "TradeDatabase:EntitlementSyncPollSeconds must be between 5 and 300 seconds.")
             .ValidateOnStart();
 
         services

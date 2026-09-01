@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WiseLine.Portal.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using WiseLine.Portal.Infrastructure.Persistence;
 namespace WiseLine.Portal.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(PortalDbContext))]
-    partial class PortalDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260901152548_AlignTradeIdentifiers")]
+    partial class AlignTradeIdentifiers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -190,43 +193,6 @@ namespace WiseLine.Portal.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId", "OccurredAt");
 
                     b.ToTable("AuditEvents", "audit");
-                });
-
-            modelBuilder.Entity("WiseLine.Portal.Domain.Integration.TradeEntitlementSyncRequest", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("AttemptCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("LastError")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTimeOffset>("NextAttemptAt")
-                        .HasPrecision(0)
-                        .HasColumnType("datetimeoffset(0)");
-
-                    b.Property<Guid>("PortalUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset?>("ProcessedAt")
-                        .HasPrecision(0)
-                        .HasColumnType("datetimeoffset(0)");
-
-                    b.Property<DateTimeOffset>("RequestedAt")
-                        .HasPrecision(0)
-                        .HasColumnType("datetimeoffset(0)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PortalUserId", "RequestedAt");
-
-                    b.HasIndex("ProcessedAt", "NextAttemptAt");
-
-                    b.ToTable("TradeEntitlementSyncRequests", "integration");
                 });
 
             modelBuilder.Entity("WiseLine.Portal.Domain.Payments.PaymentWebhookEvent", b =>
@@ -597,15 +563,6 @@ namespace WiseLine.Portal.Infrastructure.Persistence.Migrations
                     b.HasOne("WiseLine.Portal.Infrastructure.Identity.PortalUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("WiseLine.Portal.Domain.Integration.TradeEntitlementSyncRequest", b =>
-                {
-                    b.HasOne("WiseLine.Portal.Infrastructure.Identity.PortalUser", null)
-                        .WithMany()
-                        .HasForeignKey("PortalUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

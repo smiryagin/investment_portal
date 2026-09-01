@@ -30,7 +30,7 @@ export class PortalApiService {
     return this.http.get<PortfolioSummary[]>('/api/portfolios');
   }
 
-  getPortfolio(id: number): Observable<PortfolioDetails> {
+  getPortfolio(id: string): Observable<PortfolioDetails> {
     return this.http.get<PortfolioDetails>(`/api/portfolios/${id}`);
   }
 
@@ -44,7 +44,7 @@ export class PortalApiService {
       .pipe(switchMap(() => this.http.post<McpTokenCreated>('/api/mcp-tokens', { displayName })));
   }
 
-  revokeMcpToken(id: number): Observable<void> {
+  revokeMcpToken(id: string): Observable<void> {
     return this.auth
       .ensureCsrf()
       .pipe(switchMap(() => this.http.delete<void>(`/api/mcp-tokens/${id}`)));

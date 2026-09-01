@@ -1,7 +1,7 @@
 namespace WiseLine.Portal.Application.Trade;
 
 public sealed record PortfolioSummary(
-    long Id,
+    Guid Id,
     string Name,
     string? StrategyName,
     decimal MarketValue,
@@ -11,7 +11,7 @@ public sealed record PortfolioSummary(
     DateTimeOffset? UpdatedAt);
 
 public sealed record PortfolioDetails(
-    long Id,
+    Guid Id,
     string Name,
     string? Description,
     string? StrategyName,
@@ -22,7 +22,7 @@ public sealed record PortfolioDetails(
     IReadOnlyList<PortfolioPosition> Positions);
 
 public sealed record PortfolioPosition(
-    long Id,
+    string Id,
     string Symbol,
     string? Description,
     decimal Quantity,

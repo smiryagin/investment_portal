@@ -7,6 +7,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using WiseLine.Portal.Application.Payments;
+using WiseLine.Portal.Domain.Integration;
 using WiseLine.Portal.Domain.Payments;
 using WiseLine.Portal.Domain.Subscriptions;
 using WiseLine.Portal.Infrastructure.Persistence;
@@ -39,10 +40,17 @@ public sealed class PaymentWebhookProcessor(
 
         try
         {
+            Guid? portalUserId = null;
             if (eventType.StartsWith("customer.subscription.", StringComparison.Ordinal))
             {
                 var resource = root.GetProperty("data").GetProperty("object");
-                await ApplyStripeSubscriptionAsync(resource, cancellationToken);
+                portalUserId = await ApplyStripeSubscriptionAsync(resource, cancellationToken);
+            }
+
+            if (portalUserId is { } userId)
+            {
+                dbContext.TradeEntitlementSyncRequests.Add(
+                    new TradeEntitlementSyncRequest(userId, timeProvider.GetUtcNow()));
             }
 
             webhookEvent.MarkProcessed(timeProvider.GetUtcNow());
@@ -75,9 +83,19 @@ public sealed class PaymentWebhookProcessor(
 
         try
         {
+            Guid? portalUserId = null;
             if (eventType.StartsWith("BILLING.SUBSCRIPTION.", StringComparison.Ordinal))
             {
-                await ApplyPayPalSubscriptionAsync(eventType, root.GetProperty("resource"), cancellationToken);
+                portalUserId = await ApplyPayPalSubscriptionAsync(
+                    eventType,
+                    root.GetProperty("resource"),
+                    cancellationToken);
+            }
+
+            if (portalUserId is { } userId)
+            {
+                dbContext.TradeEntitlementSyncRequests.Add(
+                    new TradeEntitlementSyncRequest(userId, timeProvider.GetUtcNow()));
             }
 
             webhookEvent.MarkProcessed(timeProvider.GetUtcNow());
@@ -155,7 +173,9 @@ public sealed class PaymentWebhookProcessor(
         }
     }
 
-    private async Task ApplyStripeSubscriptionAsync(JsonElement resource, CancellationToken cancellationToken)
+    private async Task<Guid?> ApplyStripeSubscriptionAsync(
+        JsonElement resource,
+        CancellationToken cancellationToken)
     {
         var providerSubscriptionId = GetRequiredString(resource, "id");
         var subscription = await FindSubscriptionAsync(
@@ -166,7 +186,7 @@ public sealed class PaymentWebhookProcessor(
 
         if (subscription is null)
         {
-            return;
+            return null;
         }
 
         var now = timeProvider.GetUtcNow();
@@ -199,9 +219,11 @@ public sealed class PaymentWebhookProcessor(
         {
             subscription.ScheduleCancellation(now);
         }
+
+        return subscription.UserId;
     }
 
-    private async Task ApplyPayPalSubscriptionAsync(
+    private async Task<Guid?> ApplyPayPalSubscriptionAsync(
         string eventType,
         JsonElement resource,
         CancellationToken cancellationToken)
@@ -216,7 +238,7 @@ public sealed class PaymentWebhookProcessor(
 
         if (subscription is null)
         {
-            return;
+            return null;
         }
 
         var now = timeProvider.GetUtcNow();
@@ -249,6 +271,8 @@ public sealed class PaymentWebhookProcessor(
                 subscription.Expire(now);
                 break;
         }
+
+        return subscription.UserId;
     }
 
     private async Task<Subscription?> FindSubscriptionAsync(
@@ -274,14 +298,20 @@ public sealed class PaymentWebhookProcessor(
         string payload,
         CancellationToken cancellationToken)
     {
-        if (await dbContext.PaymentWebhookEvents.AnyAsync(
-                x => x.Provider == provider && x.ProviderEventId == eventId,
-                cancellationToken))
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
+        var existing = await dbContext.PaymentWebhookEvents.SingleOrDefaultAsync(
+            x => x.Provider == provider && x.ProviderEventId == eventId,
+            cancellationToken);
+        if (existing is not null)
         {
-            return null;
+            if (!string.Equals(existing.PayloadSha256, hash, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("A webhook event identifier was reused with different content.");
+            }
+
+            return existing.ProcessedAt is null ? existing : null;
         }
 
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
         var webhookEvent = new PaymentWebhookEvent(provider, eventId, eventType, hash, timeProvider.GetUtcNow());
         dbContext.PaymentWebhookEvents.Add(webhookEvent);
         return webhookEvent;

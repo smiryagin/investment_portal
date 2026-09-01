@@ -1,6 +1,7 @@
 using System.Data;
 using Microsoft.EntityFrameworkCore;
 using WiseLine.Portal.Application.Subscriptions;
+using WiseLine.Portal.Domain.Integration;
 using WiseLine.Portal.Domain.Subscriptions;
 using WiseLine.Portal.Infrastructure.Persistence;
 
@@ -69,6 +70,7 @@ public sealed class SubscriptionAccessService(
         code.RecordRedemption(now);
         subscription.ExtendTrial(code.TrialExtensionDays, now);
         dbContext.PromotionRedemptions.Add(new PromotionRedemption(code.Id, userId, now));
+        dbContext.TradeEntitlementSyncRequests.Add(new TradeEntitlementSyncRequest(userId, now));
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);

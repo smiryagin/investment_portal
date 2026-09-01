@@ -33,9 +33,9 @@ public sealed class PortfoliosController(
         }
     }
 
-    [HttpGet("{portfolioId:long}")]
+    [HttpGet("{portfolioId:guid}")]
     public async Task<ActionResult<PortfolioDetails>> Get(
-        long portfolioId,
+        Guid portfolioId,
         CancellationToken cancellationToken)
     {
         var userId = User.GetRequiredUserId();

@@ -41,6 +41,6 @@ Create a separate staging deployment identity limited to `WiseLinePortal_Staging
 
 ## Trade connector
 
-Create `InvestmentPortal_Connector` in `Trade`, then grant only the five procedure permissions listed in `TRADE_DATABASE_CONTRACT.md`. Do not add it to `db_datareader`, `db_datawriter`, or `db_owner`.
+Apply `investment_mcp/sql/012_add_portal_integration.sql`, create `InvestmentPortal_Connector` in `Trade`, and add it only to the `investment_portal_runtime` role as shown in `TRADE_DATABASE_CONTRACT.md`. The role grants the seven portal contract procedures and explicitly denies direct reads or writes to the `invest` schema. Do not add the connector to `db_datareader`, `db_datawriter`, or `db_owner`.
 
 Use encrypted SQL connections. Staging may temporarily trust the current server certificate; production should use a certificate trusted by the portal server and set `TrustServerCertificate=False`.

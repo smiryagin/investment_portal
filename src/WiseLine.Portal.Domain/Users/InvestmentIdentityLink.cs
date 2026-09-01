@@ -6,8 +6,18 @@ public sealed class InvestmentIdentityLink
     {
     }
 
-    public InvestmentIdentityLink(Guid portalUserId, long tradeUserId, DateTimeOffset now)
+    public InvestmentIdentityLink(Guid portalUserId, Guid tradeUserId, DateTimeOffset now)
     {
+        if (portalUserId == Guid.Empty)
+        {
+            throw new ArgumentException("A portal user is required.", nameof(portalUserId));
+        }
+
+        if (tradeUserId == Guid.Empty)
+        {
+            throw new ArgumentException("A Trade user is required.", nameof(tradeUserId));
+        }
+
         Id = Guid.NewGuid();
         PortalUserId = portalUserId;
         TradeUserId = tradeUserId;
@@ -18,7 +28,7 @@ public sealed class InvestmentIdentityLink
 
     public Guid PortalUserId { get; private set; }
 
-    public long TradeUserId { get; private set; }
+    public Guid TradeUserId { get; private set; }
 
     public DateTimeOffset CreatedAt { get; private set; }
 }

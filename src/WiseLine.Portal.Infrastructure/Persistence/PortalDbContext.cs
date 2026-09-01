@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WiseLine.Portal.Domain.Auditing;
+using WiseLine.Portal.Domain.Integration;
 using WiseLine.Portal.Domain.Payments;
 using WiseLine.Portal.Domain.Subscriptions;
 using WiseLine.Portal.Domain.Users;
@@ -22,6 +23,8 @@ public sealed class PortalDbContext(DbContextOptions<PortalDbContext> options)
 
     public DbSet<InvestmentIdentityLink> InvestmentIdentityLinks => Set<InvestmentIdentityLink>();
 
+    public DbSet<TradeEntitlementSyncRequest> TradeEntitlementSyncRequests => Set<TradeEntitlementSyncRequest>();
+
     public DbSet<PaymentWebhookEvent> PaymentWebhookEvents => Set<PaymentWebhookEvent>();
 
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
@@ -33,8 +36,28 @@ public sealed class PortalDbContext(DbContextOptions<PortalDbContext> options)
         ConfigureIdentity(builder);
         ConfigureUsers(builder);
         ConfigureSubscriptions(builder);
+        ConfigureIntegration(builder);
         ConfigurePayments(builder);
         ConfigureAudit(builder);
+    }
+
+    private static void ConfigureIntegration(ModelBuilder builder)
+    {
+        builder.Entity<TradeEntitlementSyncRequest>(entity =>
+        {
+            entity.ToTable("TradeEntitlementSyncRequests", "integration");
+            entity.HasKey(x => x.Id);
+            entity.HasIndex(x => new { x.ProcessedAt, x.NextAttemptAt });
+            entity.HasIndex(x => new { x.PortalUserId, x.RequestedAt });
+            entity.Property(x => x.RequestedAt).HasPrecision(0);
+            entity.Property(x => x.NextAttemptAt).HasPrecision(0);
+            entity.Property(x => x.ProcessedAt).HasPrecision(0);
+            entity.Property(x => x.LastError).HasMaxLength(2000);
+            entity.HasOne<PortalUser>()
+                .WithMany()
+                .HasForeignKey(x => x.PortalUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 
     private static void ConfigureIdentity(ModelBuilder builder)

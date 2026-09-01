@@ -59,8 +59,8 @@ public sealed class McpAccessController(
         }
     }
 
-    [HttpDelete("{tokenId:long}")]
-    public async Task<IActionResult> Revoke(long tokenId, CancellationToken cancellationToken)
+    [HttpDelete("{tokenId:guid}")]
+    public async Task<IActionResult> Revoke(Guid tokenId, CancellationToken cancellationToken)
     {
         var userId = User.GetRequiredUserId();
         if (!await IsEntitledAsync(userId, cancellationToken))

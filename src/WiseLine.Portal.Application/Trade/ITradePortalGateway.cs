@@ -2,13 +2,17 @@ namespace WiseLine.Portal.Application.Trade;
 
 public interface ITradePortalGateway
 {
+    Task SynchronizeEntitlementAsync(
+        Guid portalUserId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<PortfolioSummary>> GetPortfoliosAsync(
         Guid portalUserId,
         CancellationToken cancellationToken = default);
 
     Task<PortfolioDetails?> GetPortfolioAsync(
         Guid portalUserId,
-        long portfolioId,
+        Guid portfolioId,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<McpTokenSummary>> GetMcpTokensAsync(
@@ -22,6 +26,6 @@ public interface ITradePortalGateway
 
     Task RevokeMcpTokenAsync(
         Guid portalUserId,
-        long tokenId,
+        Guid tokenId,
         CancellationToken cancellationToken = default);
 }

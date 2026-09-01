@@ -16,7 +16,7 @@ export interface Subscription {
 }
 
 export interface PortfolioSummary {
-  id: number;
+  id: string;
   name: string;
   strategyName: string | null;
   marketValue: number;
@@ -27,7 +27,7 @@ export interface PortfolioSummary {
 }
 
 export interface PortfolioPosition {
-  id: number;
+  id: string;
   symbol: string;
   description: string | null;
   quantity: number;
@@ -39,7 +39,7 @@ export interface PortfolioPosition {
 }
 
 export interface PortfolioDetails {
-  id: number;
+  id: string;
   name: string;
   description: string | null;
   strategyName: string | null;
@@ -51,7 +51,7 @@ export interface PortfolioDetails {
 }
 
 export interface McpTokenSummary {
-  id: number;
+  id: string;
   displayName: string;
   prefix: string;
   createdAt: string;

@@ -6,6 +6,10 @@ public sealed class TradeDatabaseOptions
 
     public bool Enabled { get; init; }
 
+    public string EnsureUserProcedure { get; init; } = "invest.Portal_EnsureUser";
+
+    public string SetEntitlementProcedure { get; init; } = "invest.Portal_SetEntitlement";
+
     public string GetPortfoliosProcedure { get; init; } = "invest.Portal_GetPortfolios";
 
     public string GetPortfolioProcedure { get; init; } = "invest.Portal_GetPortfolio";
@@ -15,4 +19,6 @@ public sealed class TradeDatabaseOptions
     public string CreateMcpTokenProcedure { get; init; } = "invest.Portal_CreateMcpToken";
 
     public string RevokeMcpTokenProcedure { get; init; } = "invest.Portal_RevokeMcpToken";
+
+    public int EntitlementSyncPollSeconds { get; init; } = 30;
 }
