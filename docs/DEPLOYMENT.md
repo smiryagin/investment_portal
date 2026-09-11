@@ -9,6 +9,12 @@
 - A push/merge to `main` builds once, backs up and migrates production, then deploys the production IIS site.
 - Configure required reviewers on the GitHub `production` environment.
 
+Repository-level deployment gates default to disabled. Set
+`STAGING_DEPLOY_ENABLED=true` only after the staging IIS site and runner are
+ready. Keep `PRODUCTION_DEPLOY_ENABLED=false` until production deployment is
+explicitly approved. A branch push still builds and tests while its deployment
+gate is disabled.
+
 Only GitHub-hosted runners build or test repository code. The deployment job runs the already-built artifact on the dedicated self-hosted Windows runner labeled `wiseline-portal-deploy`.
 
 ## Server prerequisites
@@ -58,6 +64,12 @@ Environment variables:
 | `PORTAL_DATABASE_NAME` | `WiseLinePortal`                                                |
 | `SQL_BACKUP_DIRECTORY` | SQL-server-local backup directory                               |
 | `PAYPAL_BASE_URL`      | sandbox for staging, live for production                        |
+
+During the initial pre-production phase, both environments may temporarily use
+`WiseLinePortal`. This is acceptable only while there are no production users
+and both payment providers remain in sandbox/test mode. Before accepting live
+customers, separate the databases or formally promote this database and create
+a new isolated staging database.
 
 Environment secrets:
 

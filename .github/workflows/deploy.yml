@@ -74,7 +74,9 @@ jobs:
           retention-days: 30
 
   deploy:
-    if: github.ref_name == 'staging' || github.ref_name == 'main'
+    if: |
+      (github.ref_name == 'staging' && vars.STAGING_DEPLOY_ENABLED == 'true') ||
+      (github.ref_name == 'main' && vars.PRODUCTION_DEPLOY_ENABLED == 'true')
     needs: build
     runs-on: [self-hosted, Windows, X64, wiseline-portal-deploy]
     timeout-minutes: 20
