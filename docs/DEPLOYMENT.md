@@ -29,10 +29,55 @@ Recommended IIS resources:
 
 | Environment | Host name                   | Site                     | App pool                 | Database                 |
 | ----------- | --------------------------- | ------------------------ | ------------------------ | ------------------------ |
-| Staging     | `staging.wiselinetrade.com` | `WiseLinePortal-Staging` | `WiseLinePortal-Staging` | `WiseLinePortal_Staging` |
+| Staging     | `staging.wiselinetrade.com` | `WiseLinePortal-Staging` | `WiseLinePortal-Staging` | `WiseLinePortal`         |
 | Production  | `wiselinetrade.com`         | `WiseLinePortal`         | `WiseLinePortal`         | `WiseLinePortal`         |
 
 Use `No Managed Code`, Integrated pipeline, AlwaysRunning, and a dedicated identity for each app pool. Bind a trusted TLS certificate and redirect HTTP to HTTPS.
+
+The shared staging/production database shown above is a temporary pre-production
+choice. It must be revisited before live customer data or live payment processing.
+
+## One-time staging server setup
+
+Before enabling deployment:
+
+1. In Cloudflare DNS, create an `A` record named `staging` that points to
+   `74.50.68.72`.
+2. Permit inbound TCP 80 and 443 in the VPS/network firewall and Windows
+   Firewall. Port 80 can be retained only for certificate validation and HTTPS
+   redirection.
+3. Install IIS and the .NET 10 Hosting Bundle, and import the staging TLS
+   certificate (including its private key) into `Local Computer\Personal`.
+4. From an elevated Windows PowerShell prompt in the repository, run:
+
+```powershell
+.\scripts\Initialize-IisSite.ps1 `
+  -SiteName 'WiseLinePortal-Staging' `
+  -AppPoolName 'WiseLinePortal-Staging' `
+  -HostName 'staging.wiselinetrade.com' `
+  -ReleaseRoot 'C:\WiseLinePortal\Releases\Staging' `
+  -ConfigPath 'C:\WiseLinePortal\Config\Staging\appsettings.External.json' `
+  -CertificateThumbprint 'REPLACE_WITH_LOCAL_MACHINE_CERTIFICATE_THUMBPRINT'
+```
+
+The script is idempotent: it creates the dedicated app pool, staging site,
+release/configuration directories, host bindings, app-pool configuration-file
+variable, and read permissions. It deliberately does not install software,
+open firewall ports, or obtain a certificate.
+
+## Self-hosted deployment runner
+
+In GitHub, open **Settings > Actions > Runners > New self-hosted runner** for
+`smiryagin/investment_portal`, select Windows x64, and run the displayed commands
+from an elevated PowerShell prompt on the VPS. Use a separate runner directory
+such as `C:\actions-runner\wiseline-portal`, configure it as a Windows service,
+and add the custom label `wiseline-portal-deploy`.
+
+The service identity needs modify access to `C:\WiseLinePortal`, permission to
+administer only the portal IIS sites/app pools, and outbound HTTPS access to
+GitHub and the public staging health URL. Do not reuse the IIS app-pool identity
+as the runner service identity. Confirm the runner is online before changing
+`STAGING_DEPLOY_ENABLED` to `true`.
 
 ## External configuration
 

@@ -18,6 +18,9 @@ permissions:
 
 jobs:
   rollback:
+    if: |
+      (inputs.environment == 'staging' && vars.STAGING_DEPLOY_ENABLED == 'true') ||
+      (inputs.environment == 'production' && vars.PRODUCTION_DEPLOY_ENABLED == 'true')
     runs-on: [self-hosted, Windows, X64, wiseline-portal-deploy]
     timeout-minutes: 10
     environment:
