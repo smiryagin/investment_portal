@@ -1,6 +1,6 @@
 # Database identities and permissions
 
-Use separate SQL identities for deployment, portal runtime, and Trade integration. Do not reuse `WiseLinePortal_Deploy` in IIS.
+Use separate SQL identities for deployment, portal runtime, and Trade integration. Do not reuse `WiseLinePortal_Deploy` in IIS. Staging currently reuses the deployment and runtime server logins but maps them independently inside `WiseLinePortal_Staging`; split these identities before production launch.
 
 ## Portal runtime identity
 
@@ -24,20 +24,40 @@ WITH DEFAULT_SCHEMA = [portal];
 GO
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[auth] TO [WiseLinePortal_Runtime];
-GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[portal] TO [WiseLinePortal_Runtime];
-GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[billing] TO [WiseLinePortal_Runtime];
-GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[audit] TO [WiseLinePortal_Runtime];
-GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[integration] TO [WiseLinePortal_Runtime];
+GRANT SELECT, INSERT, UPDATE ON SCHEMA::[portal] TO [WiseLinePortal_Runtime];
+GRANT SELECT, INSERT, UPDATE ON SCHEMA::[billing] TO [WiseLinePortal_Runtime];
+GRANT SELECT, INSERT, UPDATE ON SCHEMA::[integration] TO [WiseLinePortal_Runtime];
+GRANT SELECT, INSERT ON SCHEMA::[audit] TO [WiseLinePortal_Runtime];
 GO
 ```
 
-The runtime login receives data access only. It does not receive `ALTER`, `CONTROL`, `CREATE TABLE`, role membership, or access to the `deployment` schema. Create an equivalent `WiseLinePortal_Staging_Runtime` login/user in `WiseLinePortal_Staging`.
+The runtime login receives data access only. It does not receive `ALTER`, `CONTROL`, `CREATE TABLE`, role membership, or access to the `deployment` schema.
+
+For the current staging environment, map the existing server login into the
+staging database after the schema migration:
+
+```sql
+USE [WiseLinePortal_Staging];
+GO
+IF USER_ID(N'WiseLinePortal_Runtime') IS NULL
+BEGIN
+    CREATE USER [WiseLinePortal_Runtime]
+    FOR LOGIN [WiseLinePortal_Runtime]
+    WITH DEFAULT_SCHEMA = [portal];
+END;
+GO
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[auth] TO [WiseLinePortal_Runtime];
+GRANT SELECT, INSERT, UPDATE ON SCHEMA::[portal] TO [WiseLinePortal_Runtime];
+GRANT SELECT, INSERT, UPDATE ON SCHEMA::[billing] TO [WiseLinePortal_Runtime];
+GRANT SELECT, INSERT, UPDATE ON SCHEMA::[integration] TO [WiseLinePortal_Runtime];
+GRANT SELECT, INSERT ON SCHEMA::[audit] TO [WiseLinePortal_Runtime];
+GO
+```
 
 ## Migration identity
 
-`WiseLinePortal_Deploy` is the database owner used by the migration bundle and production backup step. Store its connection only as `PORTAL_MIGRATION_DATABASE_CONNECTION_STRING` in the protected GitHub environment. Rotate or disable it when deployment access is not needed.
-
-Create a separate staging deployment identity limited to `WiseLinePortal_Staging`.
+`WiseLinePortal_Deploy` is currently the database owner used by both environment migration bundles and the production backup step. Store its connection only as `PORTAL_MIGRATION_DATABASE_CONNECTION_STRING` in each protected GitHub environment. Rotate or disable it when deployment access is not needed. Introduce separate staging and production deployment identities before production launch.
 
 ## Trade connector
 

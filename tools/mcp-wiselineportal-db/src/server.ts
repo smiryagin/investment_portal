@@ -15,7 +15,7 @@ import {
 const toolRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 loadEnv({ path: resolve(toolRoot, ".env"), quiet: true });
 
-const EXPECTED_DATABASE = "WiseLinePortal";
+const EXPECTED_DATABASE = "WiseLinePortal_Staging";
 
 function requiredEnv(name: string): string {
   const value = process.env[name]?.trim();
@@ -117,7 +117,7 @@ server.tool("test_connection", "Verify the fixed database, login, database user,
   return textResult(result.recordset[0]);
 });
 
-server.tool("list_schemas", "List non-system schemas in WiseLinePortal.", {}, async () => {
+server.tool("list_schemas", "List non-system schemas in WiseLinePortal_Staging.", {}, async () => {
   const result = await pool.request().query(`
     SELECT s.name AS schema_name
     FROM sys.schemas AS s
@@ -128,7 +128,7 @@ server.tool("list_schemas", "List non-system schemas in WiseLinePortal.", {}, as
   return textResult(result.recordset);
 });
 
-server.tool("list_tables", "List tables and approximate row counts in WiseLinePortal.", {}, async () => {
+server.tool("list_tables", "List tables and approximate row counts in WiseLinePortal_Staging.", {}, async () => {
   const result = await pool.request().query(`
     SELECT
       s.name AS schema_name,
@@ -228,7 +228,7 @@ server.tool(
 
 server.tool(
   "run_readonly_query",
-  "Run a SELECT or CTE query against WiseLinePortal. Results are capped at 200 rows.",
+  "Run a SELECT or CTE query against WiseLinePortal_Staging. Results are capped at 200 rows.",
   { query: z.string().min(1).max(100_000) },
   async ({ query }) => {
     validateReadOnlySql(query);
@@ -277,7 +277,7 @@ server.tool("list_migrations", "List migrations applied through this MCP server.
 
 server.tool(
   "apply_migration",
-  "Apply one reviewed, idempotent schema migration to WiseLinePortal inside a transaction and record its SHA-256 checksum.",
+  "Apply one reviewed, idempotent schema migration to WiseLinePortal_Staging inside a transaction and record its SHA-256 checksum.",
   {
     migration_id: z.string().regex(/^\d{8}_\d{3}_[a-z0-9_]+$/).max(128),
     description: z.string().min(1).max(400),

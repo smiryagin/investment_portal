@@ -29,13 +29,10 @@ Recommended IIS resources:
 
 | Environment | Host name                   | Site                     | App pool                 | Database                 |
 | ----------- | --------------------------- | ------------------------ | ------------------------ | ------------------------ |
-| Staging     | `staging.wiselinetrade.com` | `WiseLinePortal-Staging` | `WiseLinePortal-Staging` | `WiseLinePortal`         |
+| Staging     | `staging.wiselinetrade.com` | `WiseLinePortal-Staging` | `WiseLinePortal-Staging` | `WiseLinePortal_Staging` |
 | Production  | `wiselinetrade.com`         | `WiseLinePortal`         | `WiseLinePortal`         | `WiseLinePortal`         |
 
 Use `No Managed Code`, Integrated pipeline, AlwaysRunning, and a dedicated identity for each app pool. Bind a trusted TLS certificate and redirect HTTP to HTTPS.
-
-The shared staging/production database shown above is a temporary pre-production
-choice. It must be revisited before live customer data or live payment processing.
 
 ## One-time staging server setup
 
@@ -106,15 +103,13 @@ Environment variables:
 | `RELEASE_ROOT`         | `C:\WiseLinePortal\Releases\Production`                         |
 | `CONFIG_PATH`          | `C:\WiseLinePortal\Config\Production\appsettings.External.json` |
 | `HEALTH_URL`           | `https://wiselinetrade.com/health/live`                         |
-| `PORTAL_DATABASE_NAME` | `WiseLinePortal`                                                |
+| `PORTAL_DATABASE_NAME` | `WiseLinePortal_Staging` (staging), `WiseLinePortal` (production) |
 | `SQL_BACKUP_DIRECTORY` | SQL-server-local backup directory                               |
 | `PAYPAL_BASE_URL`      | sandbox for staging, live for production                        |
 
-During the initial pre-production phase, both environments may temporarily use
-`WiseLinePortal`. This is acceptable only while there are no production users
-and both payment providers remain in sandbox/test mode. Before accepting live
-customers, separate the databases or formally promote this database and create
-a new isolated staging database.
+Staging and production use separate databases. Never point the staging
+environment at `WiseLinePortal` or the production environment at
+`WiseLinePortal_Staging`.
 
 Environment secrets:
 

@@ -1,15 +1,15 @@
 # WiseLinePortal database development MCP
 
-Local TypeScript MCP server for developing the `WiseLinePortal` SQL Server database. It uses stdio transport and is intended only for local Codex development—not production runtime access.
+Local TypeScript MCP server for developing the `WiseLinePortal_Staging` SQL Server database. It uses stdio transport and is intended only for local Codex development—not production runtime access.
 
 ## Safety model
 
-- The configured database must be exactly `WiseLinePortal`.
+- The configured database must be exactly `WiseLinePortal_Staging`.
 - Startup fails unless the database identity is a member of `db_owner`.
 - Read tools inspect schemas, tables, programmable objects, and capped query results.
 - All writes go through `apply_migration`, which validates the script, obtains an application lock, runs every batch in one transaction, and records an immutable SHA-256 checksum.
 - Database switching, cross-database object names, login/user/role changes, permission changes, server configuration, external data access, and SQLCMD directives are blocked.
-- SQL Server permissions remain the ultimate security boundary. The `WiseLinePortal_Deploy` login must have access only to `WiseLinePortal` and must never be a server administrator.
+- SQL Server permissions remain the ultimate security boundary. The `WiseLinePortal_Deploy` login must never be a server administrator. It currently owns both portal databases, so protect and rotate this credential carefully until separate staging and production deployment identities are introduced.
 
 ## Tools
 
@@ -43,7 +43,7 @@ For SQL Server on the same computer, start with:
 ```dotenv
 WISELINE_PORTAL_SQL_HOST=localhost
 WISELINE_PORTAL_SQL_PORT=1433
-WISELINE_PORTAL_SQL_DATABASE=WiseLinePortal
+WISELINE_PORTAL_SQL_DATABASE=WiseLinePortal_Staging
 WISELINE_PORTAL_SQL_USER=WiseLinePortal_Deploy
 WISELINE_PORTAL_SQL_ENCRYPT=true
 WISELINE_PORTAL_SQL_TRUST_CERT=false
