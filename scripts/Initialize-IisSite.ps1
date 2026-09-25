@@ -105,15 +105,17 @@ Set-WebConfigurationProperty `
 
 $environmentFilter =
     "system.applicationHost/applicationPools/add[@name='$AppPoolName']/environmentVariables"
+$configVariableFilter =
+    "$environmentFilter/add[@name='WISELINE_PORTAL_CONFIG_FILE']"
 $configVariable = Get-WebConfigurationProperty `
     -PSPath 'MACHINE/WEBROOT/APPHOST' `
-    -Filter $environmentFilter `
-    -Name '.' |
-    Where-Object name -eq 'WISELINE_PORTAL_CONFIG_FILE'
-if ($configVariable) {
+    -Filter $configVariableFilter `
+    -Name value `
+    -ErrorAction SilentlyContinue
+if ($null -ne $configVariable) {
     Set-WebConfigurationProperty `
         -PSPath 'MACHINE/WEBROOT/APPHOST' `
-        -Filter "$environmentFilter/add[@name='WISELINE_PORTAL_CONFIG_FILE']" `
+        -Filter $configVariableFilter `
         -Name value `
         -Value $configurationPath
 }
