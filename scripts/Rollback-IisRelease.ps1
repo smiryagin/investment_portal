@@ -13,6 +13,21 @@ Set-StrictMode -Version Latest
 if ($ReleaseId -notmatch '^[a-fA-F0-9]{7,64}$') { throw 'ReleaseId must be a Git commit SHA.' }
 Import-Module WebAdministration -ErrorAction Stop
 
+function Set-IisSitePhysicalPath {
+    param(
+        [Parameter(Mandatory)] [string] $Name,
+        [Parameter(Mandatory)] [string] $Path
+    )
+
+    $filter =
+        "system.applicationHost/sites/site[@name='$Name']/application[@path='/']/virtualDirectory[@path='/']"
+    Set-WebConfigurationProperty `
+        -PSPath 'MACHINE/WEBROOT/APPHOST' `
+        -Filter $filter `
+        -Name physicalPath `
+        -Value $Path
+}
+
 $root = [System.IO.Path]::GetFullPath($ReleaseRoot)
 $target = [System.IO.Path]::GetFullPath((Join-Path $root $ReleaseId))
 if (-not $target.StartsWith($root + [System.IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
@@ -23,7 +38,8 @@ if (-not (Test-Path -LiteralPath (Join-Path $target 'web.config'))) {
 }
 
 $sitePath = "IIS:\Sites\$SiteName"
-Set-ItemProperty -LiteralPath $sitePath -Name physicalPath -Value $target
+if (-not (Test-Path -LiteralPath $sitePath)) { throw "IIS site '$SiteName' does not exist." }
+Set-IisSitePhysicalPath -Name $SiteName -Path $target
 $poolState = (Get-WebAppPoolState -Name $AppPoolName).Value
 if ($poolState -eq 'Started') { Restart-WebAppPool -Name $AppPoolName } else { Start-WebAppPool -Name $AppPoolName }
 
