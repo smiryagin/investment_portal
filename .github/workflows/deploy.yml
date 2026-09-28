@@ -130,3 +130,30 @@ jobs:
       - name: Deploy versioned IIS release
         shell: powershell
         run: ./artifact/scripts/Deploy-IisRelease.ps1 -SiteName '${{ vars.IIS_SITE_NAME }}' -AppPoolName '${{ vars.APP_POOL_NAME }}' -PackagePath './artifact/portal.zip' -ReleaseRoot '${{ vars.RELEASE_ROOT }}' -ReleaseId '${{ github.sha }}' -HealthUrl '${{ vars.HEALTH_URL }}'
+
+      - name: Verify public health endpoint
+        shell: powershell
+        run: |
+          $healthUrl = '${{ vars.HEALTH_URL }}'
+          $separator = if ($healthUrl.Contains('?')) { '&' } else { '?' }
+          $probeUrl = "$healthUrl${separator}release=${{ github.sha }}"
+          $lastError = 'No response received.'
+          for ($attempt = 1; $attempt -le 6; $attempt++) {
+            try {
+              $response = Invoke-WebRequest `
+                -Uri $probeUrl `
+                -Headers @{ 'Cache-Control' = 'no-cache' } `
+                -UseBasicParsing `
+                -TimeoutSec 15
+              if ($response.StatusCode -eq 200) {
+                Write-Output 'Public health check succeeded.'
+                exit 0
+              }
+              $lastError = "HTTP $($response.StatusCode)"
+            }
+            catch {
+              $lastError = $_.Exception.Message
+            }
+            if ($attempt -lt 6) { Start-Sleep -Seconds 2 }
+          }
+          throw "Public health check failed after deployment: $lastError"
