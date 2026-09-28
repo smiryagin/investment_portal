@@ -32,6 +32,24 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    [Fact]
+    public async Task AngularRoute_IsServedAsHtml()
+    {
+        var response = await _client.GetAsync("/portfolios/sample");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
+        Assert.Equal("utf-8", response.Content.Headers.ContentType?.CharSet);
+    }
+
+    [Fact]
+    public async Task UnknownApiRoute_DoesNotReturnAngularApplication()
+    {
+        var response = await _client.GetAsync("/api/not-a-real-route");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }
 
 public sealed class PortalApiFactory : WebApplicationFactory<Program>
