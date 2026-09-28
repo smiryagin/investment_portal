@@ -71,7 +71,7 @@ if (Test-Path -LiteralPath $target) {
     }
 
     $existingTarget = Get-Item -LiteralPath $target
-    if (($existingTarget.Attributes -band [System.IO.FileAtributes] ::ReparsePoint) -ne 0) {
+    if (($existingTarget.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
         throw "Refusing to replace release target '$target' because it is a reparse point."
     }
     Remove-Item -LiteralPath $target -Recurse -Force
