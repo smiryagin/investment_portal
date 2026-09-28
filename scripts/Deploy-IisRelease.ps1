@@ -65,25 +65,34 @@ if (-not (Test-Path -LiteralPath $sitePath)) { throw "IIS site '$SiteName' does 
 if (-not (Test-Path -LiteralPath $poolPath)) { throw "IIS app pool '$AppPoolName' does not exist." }
 
 $previous = [System.IO.Path]::GetFullPath((Get-IisSitePhysicalPath -Name $SiteName))
+$refreshActiveRelease = $false
 if (Test-Path -LiteralPath $target) {
     if ([string]::Equals($target, $previous, [StringComparison]::OrdinalIgnoreCase)) {
-        throw "Release $ReleaseId is already the active IIS release."
+        $refreshActiveRelease = $true
     }
-
-    $existingTarget = Get-Item -LiteralPath $target
-    if (($existingTarget.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
-        throw "Refusing to replace release target '$target' because it is a reparse point."
+    else {
+        $existingTarget = Get-Item -LiteralPath $target
+        if (($existingTarget.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "Refusing to replace release target '$target' because it is a reparse point."
+        }
+        Remove-Item -LiteralPath $target -Recurse -Force
     }
-    Remove-Item -LiteralPath $target -Recurse -Force
 }
 
-New-Item -ItemType Directory -Path $target | Out-Null
-Expand-Archive -LiteralPath $package -DestinationPath $target
-if (-not (Test-Path -LiteralPath (Join-Path $target 'web.config'))) {
-    throw 'The release package does not contain web.config.'
+if (-not $refreshActiveRelease) {
+    New-Item -ItemType Directory -Path $target | Out-Null
+    Expand-Archive -LiteralPath $package -DestinationPath $target
+    if (-not (Test-Path -LiteralPath (Join-Path $target 'web.config'))) {
+        throw 'The release package does not contain web.config.'
+    }
 }
 
-$offlineFile = if (Test-Path -LiteralPath $previous) { Join-Path $previous 'app_offline.htm' } else { $null }
+$offlineFile = if (-not $refreshActiveRelease -and (Test-Path -LiteralPath $previous)) {
+    Join-Path $previous 'app_offline.htm'
+}
+else {
+    $null
+}
 $curlCommand = (Get-Command curl.exe -ErrorAction Stop).Source
 
 function Test-PortalHealth {
@@ -135,7 +144,9 @@ try {
         Start-Sleep -Seconds 2
     }
 
-    Set-IisSitePhysicalPath -Name $SiteName -Path $target
+    if (-not $refreshActiveRelease) {
+        Set-IisSitePhysicalPath -Name $SiteName -Path $target
+    }
     $poolState = (Get-WebAppPoolState -Name $AppPoolName).Value
     if ($poolState -eq 'Started') { Restart-WebAppPool -Name $AppPoolName } else { Start-WebAppPool -Name $AppPoolName }
 
@@ -143,19 +154,24 @@ try {
         throw "Health check failed for release $ReleaseId."
     }
 
-    $stateDirectory = Join-Path $root '_state'
-    New-Item -ItemType Directory -Path $stateDirectory -Force | Out-Null
-    [ordered]@{
-        releaseId = $ReleaseId
-        releasePath = $target
-        previousPath = $previous
-        deployedAtUtc = [DateTimeOffset]::UtcNow.ToString('O')
-    } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $stateDirectory 'last-deployment.json') -Encoding UTF8
+    if ($refreshActiveRelease) {
+        Write-Output "Active release configuration refreshed successfully: $ReleaseId"
+    }
+    else {
+        $stateDirectory = Join-Path $root '_state'
+        New-Item -ItemType Directory -Path $stateDirectory -Force | Out-Null
+        [ordered]@{
+            releaseId = $ReleaseId
+            releasePath = $target
+            previousPath = $previous
+            deployedAtUtc = [DateTimeOffset]::UtcNow.ToString('O')
+        } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $stateDirectory 'last-deployment.json') -Encoding UTF8
 
-    Write-Output "Deployment succeeded: $ReleaseId"
+        Write-Output "Deployment succeeded: $ReleaseId"
+    }
 }
 catch {
-    if (Test-Path -LiteralPath $previous) {
+    if (-not $refreshActiveRelease -and (Test-Path -LiteralPath $previous)) {
         Set-IisSitePhysicalPath -Name $SiteName -Path $previous
         $poolState = (Get-WebAppPoolState -Name $AppPoolName).Value
         if ($poolState -eq 'Started') { Restart-WebAppPool -Name $AppPoolName } else { Start-WebAppPool -Name $AppPoolName }
