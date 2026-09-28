@@ -43,4 +43,8 @@ export class RegisterPage {
           this.error.set(readableHttpError(error, 'Account creation failed. Please try again.')),
       });
   }
+
+  protected googleRegister(): void {
+    this.auth.googleLogin('/account');
+  }
 }
