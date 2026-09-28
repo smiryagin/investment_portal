@@ -84,17 +84,34 @@ if (-not (Test-Path -LiteralPath (Join-Path $target 'web.config'))) {
 }
 
 $offlineFile = if (Test-Path -LiteralPath $previous) { Join-Path $previous 'app_offline.htm' } else { $null }
+$curlCommand = (Get-Command curl.exe -ErrorAction Stop).Source
 
 function Test-PortalHealth {
     param([uri] $Uri)
+
+    $resolve = "{0}:{1}:127.0.0.1" -f $Uri.Host, $Uri.Port
     for ($attempt = 1; $attempt -le 6; $attempt++) {
-        try {
-            $response = Invoke-WebRequest -Uri $Uri -UseBasicParsing -TimeoutSec 15
-            if ($response.StatusCode -eq 200) { return $true }
+        $curlOutput = & $curlCommand `
+            --fail `
+            --silent `
+            --show-error `
+            --max-time 15 `
+            --noproxy '*' `
+            --resolve $resolve `
+            $Uri.AbsoluteUri 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            return $true
         }
-        catch {
-            if ($attempt -eq 6) { return $false }
+
+        $details = (($curlOutput | Out-String).Trim())
+        if ($details.Length -gt 500) {
+            $details = $details.Substring(0, 500)
         }
+        Write-Warning (
+            "Local IIS health attempt {0}/6 failed (curl exit {1}): {2}" -f `
+                $attempt, $LASTEXITCODE, $details)
+
+        if ($attempt -eq 6) { return $false }
         Start-Sleep -Seconds 2
     }
     return $false
