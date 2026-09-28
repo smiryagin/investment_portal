@@ -20,6 +20,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Validate PowerShell deployment scripts
+        shell: pwsh
+        run: |
+          $failures = @()
+          Get-ChildItem -LiteralPath 'scripts' -Filter '*.ps1' -File | ForEach-Object {
+            $tokens = $null
+            $parseErrors = $null
+            [void] [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName,
+              [ref] $tokens,
+              [ref] $parseErrors)
+
+            foreach ($parseError in $parseErrors) {
+              $failures += (
+                "{0}:{1}:{2}: {3}" -f
+                  $_.FullName,
+                  $parseError.Extent.StartLineNumber,
+                  $parseError.Extent.StartColumnNumber,
+                  $parseError.Message)
+            }
+          }
+
+          if ($failures.Count -gt 0) {
+            $failures | ForEach-Object { Write-Error $_ }
+            throw 'One or more PowerShell deployment scripts contain syntax errors.'
+          }
+
+          Write-Output 'PowerShell deployment scripts parsed successfully.'
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
