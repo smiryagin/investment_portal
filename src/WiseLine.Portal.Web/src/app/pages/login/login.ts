@@ -18,6 +18,7 @@ export class LoginPage {
   protected readonly auth = inject(AuthService);
 
   protected readonly submitting = signal(false);
+  protected readonly passwordVisible = signal(false);
   protected readonly error = signal<string | null>(
     this.route.snapshot.queryParamMap.has('externalError')
       ? 'Google login could not be completed. Please try again.'
@@ -54,5 +55,9 @@ export class LoginPage {
   protected googleLogin(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/dashboard';
     this.auth.googleLogin(returnUrl.startsWith('/') ? returnUrl : '/dashboard');
+  }
+
+  protected togglePasswordVisibility(): void {
+    this.passwordVisible.update((visible) => !visible);
   }
 }

@@ -68,6 +68,25 @@ jobs:
           npm run test:ci
           npm run build
 
+          $indexPath = 'dist/WiseLine.Portal.Web/browser/index.html'
+          $indexHtml = Get-Content -LiteralPath $indexPath -Raw
+          $stylesheetLinks = [regex]::Matches(
+            $indexHtml,
+            '<link\b[^>]*\brel="stylesheet"[^>]*>')
+
+          if ($stylesheetLinks.Count -eq 0) {
+            throw 'The Angular production build does not contain a stylesheet link.'
+          }
+
+          foreach ($stylesheetLink in $stylesheetLinks) {
+            if ($stylesheetLink.Value -match '\bonload=' -or
+                $stylesheetLink.Value -match '\bmedia="print"') {
+              throw 'The Angular stylesheet requires an inline load handler that is blocked by the portal CSP.'
+            }
+          }
+
+          Write-Output 'Angular stylesheet loading is compatible with the portal CSP.'
+
       - name: Copy Angular into API web root
         shell: pwsh
         run: |
