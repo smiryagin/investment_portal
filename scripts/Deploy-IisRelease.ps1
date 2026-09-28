@@ -71,7 +71,7 @@ if (Test-Path -LiteralPath $target) {
     }
 
     $existingTarget = Get-Item -LiteralPath $target
-    if (($existingTarget.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+    if (($existingTarget.Attributes -band [System.IO.FileAtributes] ::ReparsePoint) -ne 0) {
         throw "Refusing to replace release target '$target' because it is a reparse point."
     }
     Remove-Item -LiteralPath $target -Recurse -Force
@@ -91,15 +91,27 @@ function Test-PortalHealth {
 
     $resolve = "{0}:{1}:127.0.0.1" -f $Uri.Host, $Uri.Port
     for ($attempt = 1; $attempt -le 6; $attempt++) {
-        $curlOutput = & $curlCommand `
-            --fail `
-            --silent `
-            --show-error `
-            --max-time 15 `
-            --noproxy '*' `
-            --resolve $resolve `
-            $Uri.AbsoluteUri 2>&1
-        if ($LASTEXITCODE -eq 0) {
+        $savedErrorActionPreference = $ErrorActionPreference
+        try {
+            # curl uses a non-zero exit code for transient HTTP failures such as
+            # the 503 IIS returns while the application pool is warming up.
+            # Capture that result so the retry loop can decide when to fail.
+            $ErrorActionPreference = 'Continue'
+            $curlOutput = & $curlCommand `
+                --fail `
+                --silent `
+                --show-error `
+                --max-time 15 `
+                --noproxy '*' `
+                --resolve $resolve `
+                $Uri.AbsoluteUri 2>&1
+            $curlExitCode = $LASTEXITCODE
+        }
+        finally {
+            $ErrorActionPreference = $savedErrorActionPreference
+        }
+
+        if ($curlExitCode -eq 0) {
             return $true
         }
 
@@ -109,7 +121,7 @@ function Test-PortalHealth {
         }
         Write-Warning (
             "Local IIS health attempt {0}/6 failed (curl exit {1}): {2}" -f `
-                $attempt, $LASTEXITCODE, $details)
+                $attempt, $curlExitCode, $details)
 
         if ($attempt -eq 6) { return $false }
         Start-Sleep -Seconds 2
