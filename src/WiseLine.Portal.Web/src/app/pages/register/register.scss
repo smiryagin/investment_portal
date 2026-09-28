@@ -54,10 +54,74 @@
 .register-form > p {
   color: var(--muted);
 }
+
+.google-button {
+  display: inline-flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  margin-top: 1.5rem;
+  border: 1px solid #cfdbd4;
+  border-radius: 12px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.google-button svg {
+  width: 20px;
+}
+
+.google-button:hover:not(:disabled) {
+  border-color: #aebfb6;
+  background: #f8faf8;
+  box-shadow: 0 8px 25px rgba(21, 61, 45, 0.08);
+  transform: translateY(-1px);
+}
+
+.google-button:focus-visible,
+.auth-switch a:focus-visible {
+  outline: 3px solid rgba(39, 137, 101, 0.22);
+  outline-offset: 3px;
+}
+
+.google-button:disabled {
+  opacity: 0.55;
+  transform: none;
+  cursor: not-allowed;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 1.35rem 0;
+  color: #77877f;
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+}
+
+.divider::before,
+.divider::after {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  content: '';
+}
+
 form {
   display: grid;
   gap: 1rem;
-  margin-top: 1.5rem;
 }
 .terms-row {
   display: flex;
@@ -99,5 +163,11 @@ form {
   .trial-panel > * {
     width: min(560px, 100%);
     margin-inline: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .google-button {
+    transition: none;
   }
 }
