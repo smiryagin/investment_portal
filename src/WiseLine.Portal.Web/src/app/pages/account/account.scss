@@ -40,6 +40,19 @@
 .profile-row div > span {
   display: block;
 }
+.email-confirmation-callout {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #ead9ad;
+  border-radius: 12px;
+  background: #fffaf0;
+}
+.email-confirmation-callout p {
+  margin-bottom: 0.8rem;
+  color: #6f5a25;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
 .profile-row div > span {
   margin-top: 0.25rem;
   color: var(--muted);

@@ -497,3 +497,15 @@ form {
     transition: none;
   }
 }
+.forgot-password-link {
+  display: inline-block;
+  margin-top: 0.9rem;
+  color: var(--green-700);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.forgot-password-link:hover {
+  text-decoration: underline;
+}

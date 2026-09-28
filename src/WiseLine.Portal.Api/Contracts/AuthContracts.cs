@@ -12,11 +12,20 @@ public sealed record LoginRequest(
     [Required, MaxLength(128)] string Password,
     bool RememberMe = false);
 
+public sealed record ForgotPasswordRequest(
+    [Required, EmailAddress, MaxLength(256)] string Email);
+
+public sealed record ResetPasswordRequest(
+    [Required, EmailAddress, MaxLength(256)] string Email,
+    [Required, MaxLength(2048)] string Token,
+    [Required, MinLength(12), MaxLength(128)] string NewPassword);
+
 public sealed record CurrentUserResponse(
     Guid Id,
     string Email,
     string DisplayName,
-    bool HasGoogleLogin);
+    bool HasGoogleLogin,
+    bool EmailConfirmed);
 
 public sealed record RedeemPromotionRequest(
     [Required, MaxLength(64)] string Code);

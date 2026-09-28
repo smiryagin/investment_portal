@@ -50,6 +50,16 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task ResendWebhook_RejectsUnsignedRequests()
+    {
+        using var content = new StringContent("{\"type\":\"email.delivered\"}");
+
+        var response = await _client.PostAsync("/api/webhooks/resend", content);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }
 
 public sealed class PortalApiFactory : WebApplicationFactory<Program>

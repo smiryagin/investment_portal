@@ -21,6 +21,7 @@ export class AccountPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly submitting = signal(false);
   protected readonly checkoutProvider = signal<'Stripe' | 'PayPal' | null>(null);
+  protected readonly sendingConfirmation = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
   protected readonly promotionForm = this.formBuilder.nonNullable.group({
@@ -68,6 +69,21 @@ export class AccountPage implements OnInit {
         next: (checkout) => window.location.assign(checkout.redirectUrl),
         error: (error: unknown) =>
           this.error.set(readableHttpError(error, `${provider} checkout is unavailable.`)),
+      });
+  }
+
+  protected resendConfirmation(): void {
+    if (this.sendingConfirmation()) return;
+    this.error.set(null);
+    this.success.set(null);
+    this.sendingConfirmation.set(true);
+    this.auth
+      .resendEmailConfirmation()
+      .pipe(finalize(() => this.sendingConfirmation.set(false)))
+      .subscribe({
+        next: () => this.success.set('Confirmation email queued. Check your inbox and spam folder.'),
+        error: (error: unknown) =>
+          this.error.set(readableHttpError(error, 'The confirmation email could not be queued.')),
       });
   }
 }

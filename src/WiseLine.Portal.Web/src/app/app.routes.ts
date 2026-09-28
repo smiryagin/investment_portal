@@ -28,6 +28,18 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/register/register').then((m) => m.RegisterPage),
   },
   {
+    path: 'forgot-password',
+    title: 'Forgot password — WiseLine Trade',
+    loadComponent: () =>
+      import('./pages/forgot-password/forgot-password').then((m) => m.ForgotPasswordPage),
+  },
+  {
+    path: 'reset-password',
+    title: 'Reset password — WiseLine Trade',
+    loadComponent: () =>
+      import('./pages/reset-password/reset-password').then((m) => m.ResetPasswordPage),
+  },
+  {
     path: 'dashboard',
     title: 'Dashboard — WiseLine Trade',
     canActivate: [authGuard],

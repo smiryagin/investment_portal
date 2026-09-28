@@ -3,6 +3,7 @@ export interface CurrentUser {
   email: string;
   displayName: string;
   hasGoogleLogin: boolean;
+  emailConfirmed: boolean;
 }
 
 export interface Subscription {

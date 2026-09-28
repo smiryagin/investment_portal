@@ -27,21 +27,40 @@ if ([string]::IsNullOrWhiteSpace($directory) -or [System.IO.Path]::GetPathRoot($
     throw 'ConfigPath must be a file below a dedicated configuration directory.'
 }
 New-Item -ItemType Directory -Path $directory -Force | Out-Null
+$dataProtectionPath = Join-Path $directory 'DataProtectionKeys'
+New-Item -ItemType Directory -Path $dataProtectionPath -Force | Out-Null
 
 $tradeConnection = Get-EnvironmentValue 'TRADE_DATABASE_CONNECTION_STRING'
 $stripeSecret = Get-EnvironmentValue 'STRIPE_SECRET_KEY'
 $paypalClientId = Get-EnvironmentValue 'PAYPAL_CLIENT_ID'
+$resendApiKey = Get-EnvironmentValue 'RESEND_API_KEY'
+$resendFromAddress = Get-EnvironmentValue 'RESEND_FROM_ADDRESS'
+if ([string]::IsNullOrWhiteSpace($resendFromAddress)) {
+    $resendFromAddress = 'WiseLine Trade <no-reply@email.wiselinetrade.com>'
+}
 
 $configuration = [ordered]@{
     ConnectionStrings = [ordered]@{
         PortalDatabase = Get-RequiredEnvironmentValue 'PORTAL_RUNTIME_DATABASE_CONNECTION_STRING'
         TradeDatabase = $tradeConnection
     }
+    DataProtection = [ordered]@{
+        KeyRingPath = $dataProtectionPath
+    }
     Authentication = [ordered]@{
         Google = [ordered]@{
             ClientId = Get-EnvironmentValue 'GOOGLE_CLIENT_ID'
             ClientSecret = Get-EnvironmentValue 'GOOGLE_CLIENT_SECRET'
         }
+    }
+    Email = [ordered]@{
+        Enabled = -not [string]::IsNullOrWhiteSpace($resendApiKey)
+        ApiKey = $resendApiKey
+        FromAddress = $resendFromAddress
+        ReplyToAddress = Get-EnvironmentValue 'RESEND_REPLY_TO_ADDRESS'
+        PublicBaseUrl = Get-RequiredEnvironmentValue 'PUBLIC_BASE_URL'
+        WebhookSecret = Get-EnvironmentValue 'RESEND_WEBHOOK_SECRET'
+        OutboxPollSeconds = 5
     }
     TradeDatabase = [ordered]@{
         Enabled = -not [string]::IsNullOrWhiteSpace($tradeConnection)
@@ -67,4 +86,5 @@ $configuration = [ordered]@{
 
 $configuration | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $fullPath -Encoding UTF8
 & icacls.exe $fullPath /inheritance:r /grant:r 'SYSTEM:F' 'Administrators:F' "IIS AppPool\${AppPoolName}:R" | Out-Null
+& icacls.exe $dataProtectionPath /inheritance:r /grant:r 'SYSTEM:F' 'Administrators:F' "IIS AppPool\${AppPoolName}:(OI)(CI)M" | Out-Null
 Write-Output "External configuration updated for app pool '$AppPoolName'."

@@ -1,10 +1,13 @@
+using System.Net.Mail;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using WiseLine.Portal.Application.Email;
 using WiseLine.Portal.Application.Payments;
 using WiseLine.Portal.Application.Subscriptions;
 using WiseLine.Portal.Application.Trade;
+using WiseLine.Portal.Infrastructure.Email;
 using WiseLine.Portal.Infrastructure.Identity;
 using WiseLine.Portal.Infrastructure.Payments;
 using WiseLine.Portal.Infrastructure.Persistence;
@@ -53,6 +56,16 @@ public static class DependencyInjection
             .AddDefaultTokenProviders();
 
         services.AddSingleton(TimeProvider.System);
+        services.AddScoped<ITransactionalEmailOutbox, TransactionalEmailOutbox>();
+        services.AddScoped<IEmailWebhookProcessor, ResendWebhookProcessor>();
+        services.AddSingleton<IEmailWebhookSignatureVerifier, ResendWebhookSignatureVerifier>();
+        services.AddHostedService<EmailOutboxWorker>();
+        services.AddHttpClient<IEmailSender, ResendEmailSender>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.resend.com/");
+            client.Timeout = TimeSpan.FromSeconds(20);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("WiseLinePortal/1.0");
+        });
         services.AddScoped<ISubscriptionAccessService, SubscriptionAccessService>();
         services.AddScoped<ITradePortalGateway, TradePortalGateway>();
         services.AddHostedService<TradeEntitlementSyncWorker>();
@@ -60,6 +73,24 @@ public static class DependencyInjection
         services.AddScoped<IPaymentWebhookProcessor, PaymentWebhookProcessor>();
         services.AddHttpClient("Stripe", client => client.Timeout = TimeSpan.FromSeconds(20));
         services.AddHttpClient("PayPal", client => client.Timeout = TimeSpan.FromSeconds(20));
+
+        services
+            .AddOptions<EmailOptions>()
+            .Bind(configuration.GetSection(EmailOptions.SectionName))
+            .Validate(
+                value => !value.Enabled || !string.IsNullOrWhiteSpace(value.ApiKey),
+                "Email:ApiKey is required when transactional email is enabled.")
+            .Validate(
+                value => !value.Enabled || MailAddress.TryCreate(value.FromAddress, out _),
+                "Email:FromAddress must be a valid mailbox when transactional email is enabled.")
+            .Validate(
+                value => !value.Enabled ||
+                    (Uri.TryCreate(value.PublicBaseUrl, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps),
+                "Email:PublicBaseUrl must be an absolute HTTPS URL when transactional email is enabled.")
+            .Validate(
+                value => value.OutboxPollSeconds is >= 2 and <= 300,
+                "Email:OutboxPollSeconds must be between 2 and 300 seconds.")
+            .ValidateOnStart();
 
         services
             .AddOptions<TradeDatabaseOptions>()

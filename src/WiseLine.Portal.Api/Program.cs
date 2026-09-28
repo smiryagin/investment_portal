@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +24,20 @@ builder.Logging.AddJsonConsole(options => options.IncludeScopes = true);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
+
+var keyRingPath = builder.Configuration["DataProtection:KeyRingPath"];
+var dataProtection = builder.Services
+    .AddDataProtection()
+    .SetApplicationName("WiseLine.Portal");
+if (!string.IsNullOrWhiteSpace(keyRingPath))
+{
+    dataProtection.PersistKeysToFileSystem(new DirectoryInfo(Path.GetFullPath(keyRingPath)));
+    if (OperatingSystem.IsWindows())
+    {
+        dataProtection.ProtectKeysWithDpapi(protectToLocalMachine: true);
+    }
+}
+
 builder.Services.AddPortalInfrastructure(builder.Configuration);
 
 builder.Services
@@ -66,7 +81,7 @@ builder.Services.AddAntiforgery(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
-builder.Services.AddControllers(options =>
+builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
 });
@@ -88,6 +103,21 @@ builder.Services.AddRateLimiter(options =>
             {
                 PermitLimit = 60,
                 Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            });
+    });
+    options.AddPolicy("sensitive", context =>
+    {
+        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var key = userId ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            key,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(15),
                 QueueLimit = 0,
                 AutoReplenishment = true
             });

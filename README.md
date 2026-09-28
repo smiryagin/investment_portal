@@ -53,6 +53,8 @@ ConnectionStrings__PortalDatabase
 ConnectionStrings__TradeDatabase
 Authentication__Google__ClientId
 Authentication__Google__ClientSecret
+Email__ApiKey
+Email__WebhookSecret
 ```
 
 Use a deployment identity only for migrations. The running API must use separate least-privilege identities for `WiseLinePortal` and `Trade`.
@@ -63,4 +65,5 @@ Use a deployment identity only for migrations. The running API must use separate
 - [Trade database stored-procedure contract](docs/TRADE_DATABASE_CONTRACT.md)
 - [Database identities and permissions](docs/DATABASE_SECURITY.md)
 - [Stripe and PayPal setup](docs/PAYMENTS.md)
+- [Transactional email and Resend](docs/EMAIL.md)
 - [GitHub Actions and IIS deployment](docs/DEPLOYMENT.md)

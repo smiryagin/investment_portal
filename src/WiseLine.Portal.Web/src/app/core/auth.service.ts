@@ -15,6 +15,12 @@ export interface RegisterInput {
   displayName: string;
 }
 
+export interface ResetPasswordInput {
+  email: string;
+  token: string;
+  newPassword: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -62,6 +68,24 @@ export class AuthService {
     return this.ensureCsrf().pipe(
       switchMap(() => this.http.post<CurrentUser>('/api/auth/register', input)),
       tap((user) => this.currentUser.set(user)),
+    );
+  }
+
+  resendEmailConfirmation(): Observable<void> {
+    return this.ensureCsrf().pipe(
+      switchMap(() => this.http.post<void>('/api/auth/email-confirmation/resend', {})),
+    );
+  }
+
+  forgotPassword(email: string): Observable<void> {
+    return this.ensureCsrf().pipe(
+      switchMap(() => this.http.post<void>('/api/auth/password/forgot', { email })),
+    );
+  }
+
+  resetPassword(input: ResetPasswordInput): Observable<void> {
+    return this.ensureCsrf().pipe(
+      switchMap(() => this.http.post<void>('/api/auth/password/reset', input)),
     );
   }
 

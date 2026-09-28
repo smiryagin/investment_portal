@@ -31,10 +31,27 @@
             <dd>Enabled</dd>
           </div>
           <div>
+            <dt>Email status</dt>
+            <dd>{{ auth.user()?.emailConfirmed ? 'Verified' : 'Verification required' }}</dd>
+          </div>
+          <div>
             <dt>Google login</dt>
             <dd>{{ auth.user()?.hasGoogleLogin ? 'Connected' : 'Not connected' }}</dd>
           </div>
         </dl>
+        @if (!auth.user()?.emailConfirmed) {
+          <div class="email-confirmation-callout">
+            <p>Confirm your email to keep password recovery and important account notices secure.</p>
+            <button
+              class="button button-secondary button-small"
+              type="button"
+              (click)="resendConfirmation()"
+              [disabled]="sendingConfirmation()"
+            >
+              {{ sendingConfirmation() ? 'Sending…' : 'Resend confirmation' }}
+            </button>
+          </div>
+        }
       </section>
 
       <section class="card account-card subscription-card">

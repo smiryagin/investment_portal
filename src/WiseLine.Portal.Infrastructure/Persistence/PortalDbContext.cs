@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WiseLine.Portal.Domain.Auditing;
+using WiseLine.Portal.Domain.Email;
 using WiseLine.Portal.Domain.Integration;
 using WiseLine.Portal.Domain.Payments;
 using WiseLine.Portal.Domain.Subscriptions;
@@ -29,6 +30,10 @@ public sealed class PortalDbContext(DbContextOptions<PortalDbContext> options)
 
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
 
+    public DbSet<EmailOutboxMessage> EmailOutboxMessages => Set<EmailOutboxMessage>();
+
+    public DbSet<EmailWebhookEvent> EmailWebhookEvents => Set<EmailWebhookEvent>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -38,6 +43,7 @@ public sealed class PortalDbContext(DbContextOptions<PortalDbContext> options)
         ConfigureSubscriptions(builder);
         ConfigureIntegration(builder);
         ConfigurePayments(builder);
+        ConfigureEmail(builder);
         ConfigureAudit(builder);
     }
 
@@ -159,6 +165,51 @@ public sealed class PortalDbContext(DbContextOptions<PortalDbContext> options)
             entity.Property(x => x.ReceivedAt).HasPrecision(0);
             entity.Property(x => x.ProcessedAt).HasPrecision(0);
             entity.Property(x => x.ProcessingError).HasMaxLength(2000);
+        });
+    }
+
+    private static void ConfigureEmail(ModelBuilder builder)
+    {
+        builder.Entity<EmailOutboxMessage>(entity =>
+        {
+            entity.ToTable("EmailOutbox", "communications");
+            entity.HasKey(x => x.Id);
+            entity.HasIndex(x => x.IdempotencyKey).IsUnique();
+            entity.HasIndex(x => x.ProviderMessageId).IsUnique().HasFilter("[ProviderMessageId] IS NOT NULL");
+            entity.HasIndex(x => new { x.Status, x.NextAttemptAt, x.LockedUntil });
+            entity.Property(x => x.ToAddress).HasMaxLength(320).IsRequired();
+            entity.Property(x => x.TemplateKey).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.Subject).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.HtmlBody).HasColumnType("nvarchar(max)").IsRequired();
+            entity.Property(x => x.TextBody).HasColumnType("nvarchar(max)").IsRequired();
+            entity.Property(x => x.IdempotencyKey).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(x => x.RequestedAt).HasPrecision(0);
+            entity.Property(x => x.NextAttemptAt).HasPrecision(0);
+            entity.Property(x => x.LockedUntil).HasPrecision(0);
+            entity.Property(x => x.SentAt).HasPrecision(0);
+            entity.Property(x => x.DeliveredAt).HasPrecision(0);
+            entity.Property(x => x.FailedAt).HasPrecision(0);
+            entity.Property(x => x.ProviderMessageId).HasMaxLength(160);
+            entity.Property(x => x.LastError).HasMaxLength(2000);
+            entity.HasOne<PortalUser>()
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<EmailWebhookEvent>(entity =>
+        {
+            entity.ToTable("EmailWebhookEvents", "communications");
+            entity.HasKey(x => x.Id);
+            entity.HasIndex(x => x.ProviderEventId).IsUnique();
+            entity.HasIndex(x => new { x.ProviderMessageId, x.OccurredAt });
+            entity.Property(x => x.ProviderEventId).HasMaxLength(160).IsRequired();
+            entity.Property(x => x.EventType).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.ProviderMessageId).HasMaxLength(160);
+            entity.Property(x => x.PayloadSha256).HasMaxLength(64).IsFixedLength().IsRequired();
+            entity.Property(x => x.OccurredAt).HasPrecision(0);
+            entity.Property(x => x.ReceivedAt).HasPrecision(0);
         });
     }
 

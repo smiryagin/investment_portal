@@ -88,6 +88,9 @@ The application reads an external JSON file named by the app-pool environment va
 ```
 
 Use a different path and pool name for staging. The deployment workflow rewrites that file and restricts it to Administrators, SYSTEM, and the selected app-pool identity.
+It also creates a sibling `DataProtectionKeys` directory, grants the selected app pool modify
+permission, and stores machine-protected ASP.NET Core keys there. This keeps authentication cookies,
+email-confirmation tokens, and password-reset tokens valid across versioned deployments.
 
 ## GitHub environments
 
@@ -106,6 +109,8 @@ Environment variables:
 | `PORTAL_DATABASE_NAME` | `WiseLinePortal_Staging` (staging), `WiseLinePortal` (production) |
 | `SQL_BACKUP_DIRECTORY` | SQL-server-local backup directory                               |
 | `PAYPAL_BASE_URL`      | sandbox for staging, live for production                        |
+| `RESEND_FROM_ADDRESS`  | `WiseLine Trade <no-reply@email.wiselinetrade.com>`             |
+| `RESEND_REPLY_TO_ADDRESS` | Optional monitored support mailbox                           |
 
 Staging and production use separate databases. Never point the staging
 environment at `WiseLinePortal` or the production environment at
@@ -117,6 +122,8 @@ Environment secrets:
 - `PORTAL_RUNTIME_DATABASE_CONNECTION_STRING` — least-privilege runtime connection used by the IIS application
 - `TRADE_DATABASE_CONNECTION_STRING` — restricted portal connector
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+- `RESEND_API_KEY` — Resend sending-only key restricted to `email.wiselinetrade.com`
+- `RESEND_WEBHOOK_SECRET` — environment-specific signing secret returned when its webhook is created
 - `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`
 - `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_PLAN_ID`, `PAYPAL_WEBHOOK_ID`
 
