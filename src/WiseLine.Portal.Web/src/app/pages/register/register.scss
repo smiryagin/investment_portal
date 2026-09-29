@@ -131,25 +131,26 @@ form {
 }
 
 .password-guidance {
-  padding: 0.85rem 1rem;
+  padding: 0.58rem 0.72rem;
   border: 1px solid var(--line);
   border-radius: 11px;
   background: #f7faf8;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  line-height: 1.25;
 }
 
 .password-guidance strong {
   display: block;
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.34rem;
   color: var(--ink);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .password-guidance ul {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.38rem 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.22rem 0.62rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -159,6 +160,7 @@ form {
   display: flex;
   align-items: center;
   gap: 0.42rem;
+  white-space: nowrap;
 }
 
 .password-requirement > span {
@@ -228,7 +230,7 @@ form {
 
 @media (max-width: 480px) {
   .password-guidance ul {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 }
 

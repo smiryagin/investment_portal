@@ -28,6 +28,7 @@ GRANT SELECT, INSERT, UPDATE ON SCHEMA::[portal] TO [WiseLinePortal_Runtime];
 GRANT SELECT, INSERT, UPDATE ON SCHEMA::[billing] TO [WiseLinePortal_Runtime];
 GRANT SELECT, INSERT, UPDATE ON SCHEMA::[integration] TO [WiseLinePortal_Runtime];
 GRANT SELECT, INSERT ON SCHEMA::[audit] TO [WiseLinePortal_Runtime];
+GRANT SELECT, INSERT, UPDATE ON SCHEMA::[communications] TO [WiseLinePortal_Runtime];
 GO
 ```
 
@@ -52,6 +53,7 @@ GRANT SELECT, INSERT, UPDATE ON SCHEMA::[portal] TO [WiseLinePortal_Runtime];
 GRANT SELECT, INSERT, UPDATE ON SCHEMA::[billing] TO [WiseLinePortal_Runtime];
 GRANT SELECT, INSERT, UPDATE ON SCHEMA::[integration] TO [WiseLinePortal_Runtime];
 GRANT SELECT, INSERT ON SCHEMA::[audit] TO [WiseLinePortal_Runtime];
+GRANT SELECT, INSERT, UPDATE ON SCHEMA::[communications] TO [WiseLinePortal_Runtime];
 GO
 ```
 
