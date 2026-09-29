@@ -41,7 +41,9 @@
         </dl>
         @if (!auth.user()?.emailConfirmed) {
           <div class="email-confirmation-callout">
-            <p>Confirm your email to keep password recovery and important account notices secure.</p>
+            <p>
+              Confirm your email to keep password recovery and important account notices secure.
+            </p>
             <button
               class="button button-secondary button-small"
               type="button"
@@ -95,6 +97,13 @@
             </div>
           </dl>
           @if (plan.status === 'Pending') {
+            <div class="trial-start-callout">
+              <strong>Start your 14-day free trial</strong>
+              <p>
+                Add a payment method to begin MCP access. You will not be charged today. Unless you
+                cancel before the trial ends, your subscription continues at $10 per month.
+              </p>
+            </div>
             <div class="checkout-actions">
               <button
                 class="button"
@@ -102,19 +111,19 @@
                 (click)="checkout('Stripe')"
                 [disabled]="checkoutProvider() !== null"
               >
-                {{ checkoutProvider() === 'Stripe' ? 'Opening…' : 'Pay by card' }}</button
+                {{ checkoutProvider() === 'Stripe' ? 'Opening…' : 'Start trial with card' }}</button
               ><button
                 class="button button-secondary"
                 type="button"
                 (click)="checkout('PayPal')"
                 [disabled]="checkoutProvider() !== null"
               >
-                {{ checkoutProvider() === 'PayPal' ? 'Opening…' : 'Pay with PayPal' }}
+                {{ checkoutProvider() === 'PayPal' ? 'Opening…' : 'Start trial with PayPal' }}
               </button>
             </div>
             <p class="payment-note">
-              Your 14-day trial begins only after a payment method is approved. Provider credentials
-              must be configured in this environment.
+              Your trial begins only after your payment method is approved. One introductory trial
+              is available per user and payment method.
             </p>
           }
         }

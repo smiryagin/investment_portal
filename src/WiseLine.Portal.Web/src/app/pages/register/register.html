@@ -2,18 +2,18 @@
   <div class="trial-panel">
     <span class="eyebrow light">14-day free trial</span>
     <h1>Bring better context to every portfolio conversation.</h1>
-    <p>Create one account for your subscription, MCP access tokens, and portfolio views.</p>
+    <p>Create your account first, then add a payment method to start your 14-day trial.</p>
     <ul>
-      <li>Full product access during the trial</li>
-      <li>$10 per month after the trial</li>
-      <li>Cancel before billing begins</li>
+      <li>Payment method required to start the trial</li>
+      <li>No charge until the 14-day trial ends</li>
+      <li>$10 per month afterward unless canceled</li>
       <li>One trial per user and payment method</li>
     </ul>
   </div>
 
   <div class="register-form">
     <h2>Create your account</h2>
-    <p>Start your trial with Google or create an account with email.</p>
+    <p>Create your account with Google or email. You’ll add a payment method next.</p>
 
     <button
       class="google-button"
@@ -140,7 +140,7 @@
         <div class="form-error" role="alert">{{ error() }}</div>
       }
       <button class="button button-wide" type="submit" [disabled]="submitting()">
-        {{ submitting() ? 'Creating account…' : 'Start free trial' }}
+        {{ submitting() ? 'Creating account…' : 'Create account' }}
       </button>
     </form>
     <p class="auth-switch">Already have an account? <a routerLink="/login">Log in</a></p>

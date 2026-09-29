@@ -97,6 +97,23 @@ dd {
   color: var(--muted);
   font-size: 0.75rem;
 }
+.trial-start-callout {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #d9c27c;
+  border-radius: 12px;
+  background: #fffaf0;
+}
+.trial-start-callout strong {
+  color: var(--green-900);
+  font-size: 0.9rem;
+}
+.trial-start-callout p {
+  margin: 0.35rem 0 0;
+  color: #66562c;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
 .payment-note {
   margin: 1rem 0 0;
   padding: 0.8rem;

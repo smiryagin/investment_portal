@@ -24,7 +24,7 @@ export const routes: Routes = [
   },
   {
     path: 'register',
-    title: 'Start your free trial — WiseLine Trade',
+    title: 'Create your account — WiseLine Trade',
     loadComponent: () => import('./pages/register/register').then((m) => m.RegisterPage),
   },
   {

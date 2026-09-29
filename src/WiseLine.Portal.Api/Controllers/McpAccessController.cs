@@ -85,7 +85,7 @@ public sealed class McpAccessController(
     private ObjectResult PaymentRequired() => Problem(
         statusCode: StatusCodes.Status402PaymentRequired,
         title: "Subscription required",
-        detail: "An active subscription or trial is required to manage MCP access.");
+        detail: "Add a payment method to start your 14-day trial and manage MCP access.");
 
     private ObjectResult TradeUnavailable(Exception exception) => Problem(
         statusCode: StatusCodes.Status503ServiceUnavailable,

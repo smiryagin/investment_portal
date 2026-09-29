@@ -34,6 +34,19 @@ describe('RegisterPage', () => {
     expect(auth.googleLogin).toHaveBeenCalledWith('/account');
   });
 
+  it('explains that a payment method starts the trial', () => {
+    const fixture = TestBed.createComponent(RegisterPage);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.textContent).toContain('Payment method required to start the trial');
+    expect(element.textContent).toContain('No charge until the 14-day trial ends');
+    expect(
+      element.querySelector<HTMLButtonElement>('button[type="submit"]')?.textContent,
+    ).toContain('Create account');
+  });
+
   it('shows password requirements as the user types', () => {
     const fixture = TestBed.createComponent(RegisterPage);
     fixture.detectChanges();

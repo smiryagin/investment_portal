@@ -1,4 +1,5 @@
 import { DatePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -21,6 +22,7 @@ export class McpAccessPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly paymentRequired = signal(false);
   protected readonly copied = signal(false);
   protected readonly form = this.formBuilder.nonNullable.group({
     displayName: ['', [Validators.required, Validators.maxLength(100)]],
@@ -31,7 +33,7 @@ export class McpAccessPage implements OnInit {
   }
 
   protected create(): void {
-    if (this.form.invalid || this.submitting()) {
+    if (this.form.invalid || this.submitting() || this.paymentRequired()) {
       this.form.markAllAsTouched();
       return;
     }
@@ -47,8 +49,7 @@ export class McpAccessPage implements OnInit {
           this.tokens.update((tokens) => [token, ...tokens]);
           this.form.reset();
         },
-        error: (error: unknown) =>
-          this.error.set(readableHttpError(error, 'The token could not be created.')),
+        error: (error: unknown) => this.handleError(error, 'The token could not be created.'),
       });
   }
 
@@ -79,8 +80,7 @@ export class McpAccessPage implements OnInit {
         this.tokens.update((tokens) =>
           tokens.map((item) => (item.id === token.id ? { ...item, isRevoked: true } : item)),
         ),
-      error: (error: unknown) =>
-        this.error.set(readableHttpError(error, 'The token could not be revoked.')),
+      error: (error: unknown) => this.handleError(error, 'The token could not be revoked.'),
     });
   }
 
@@ -89,9 +89,21 @@ export class McpAccessPage implements OnInit {
       .getMcpTokens()
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: (tokens) => this.tokens.set(tokens),
-        error: (error: unknown) =>
-          this.error.set(readableHttpError(error, 'MCP token information is unavailable.')),
+        next: (tokens) => {
+          this.paymentRequired.set(false);
+          this.tokens.set(tokens);
+        },
+        error: (error: unknown) => this.handleError(error, 'MCP token information is unavailable.'),
       });
+  }
+
+  private handleError(error: unknown, fallback: string): void {
+    if (error instanceof HttpErrorResponse && error.status === 402) {
+      this.error.set(null);
+      this.paymentRequired.set(true);
+      return;
+    }
+
+    this.error.set(readableHttpError(error, fallback));
   }
 }

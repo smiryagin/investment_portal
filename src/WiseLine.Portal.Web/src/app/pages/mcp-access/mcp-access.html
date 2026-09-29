@@ -28,6 +28,20 @@
       </section>
     }
 
+    @if (paymentRequired()) {
+      <section class="trial-required" role="status">
+        <div>
+          <span class="eyebrow">Payment method required</span>
+          <h2>Start your 14-day free trial</h2>
+          <p>
+            Add a payment method to unlock MCP access. You will not be charged today. Billing starts
+            at $10 per month after 14 days unless you cancel.
+          </p>
+        </div>
+        <a class="button button-small" routerLink="/account">Add payment method</a>
+      </section>
+    }
+
     @if (error()) {
       <div class="form-error access-error" role="alert">{{ error() }}</div>
     }
@@ -79,21 +93,28 @@
       <aside class="card create-panel">
         <span class="eyebrow">New connection</span>
         <h2>Create an access token</h2>
-        <p>Use a recognizable name such as “Codex laptop” or “Claude desktop.”</p>
-        <form [formGroup]="form" (ngSubmit)="create()">
-          <div class="field">
-            <label for="tokenName">Token name</label
-            ><input
-              id="tokenName"
-              formControlName="displayName"
-              maxlength="100"
-              placeholder="Codex laptop"
-            />
-          </div>
-          <button class="button button-wide" type="submit" [disabled]="submitting()">
-            {{ submitting() ? 'Creating…' : 'Create token' }}
-          </button>
-        </form>
+        @if (paymentRequired()) {
+          <p>Start your trial before creating your first secure connection.</p>
+          <a class="button button-wide create-panel-cta" routerLink="/account"
+            >Add payment method</a
+          >
+        } @else {
+          <p>Use a recognizable name such as “Codex laptop” or “Claude desktop.”</p>
+          <form [formGroup]="form" (ngSubmit)="create()">
+            <div class="field">
+              <label for="tokenName">Token name</label
+              ><input
+                id="tokenName"
+                formControlName="displayName"
+                maxlength="100"
+                placeholder="Codex laptop"
+              />
+            </div>
+            <button class="button button-wide" type="submit" [disabled]="submitting()">
+              {{ submitting() ? 'Creating…' : 'Create token' }}
+            </button>
+          </form>
+        }
         <div class="security-note">
           <strong>Good token hygiene</strong>
           <p>

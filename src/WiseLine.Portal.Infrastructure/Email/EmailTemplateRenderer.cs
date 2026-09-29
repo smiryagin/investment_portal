@@ -41,11 +41,11 @@ internal static class EmailTemplateRenderer
         const string subject = "Welcome to WiseLine Trade";
         var content = $"""
             <h1 style="margin:0 0 18px 0;font-family:Arial,Helvetica,sans-serif;font-size:30px;line-height:38px;color:#123b2c;">Welcome to WiseLine Trade</h1>
-            <p style="margin:0 0 18px 0;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:25px;color:#42594f;">Hello {safeName}, your account is ready. You can now manage your subscription, MCP access, portfolios, and investment strategies from one secure workspace.</p>
-            {ActionButton(safeUrl, "Open your account")}
+            <p style="margin:0 0 18px 0;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:25px;color:#42594f;">Hello {safeName}, your account is ready. Add a payment method from your Account page to start your 14-day trial and unlock MCP access. You will not be charged today; billing begins at $10 per month after the trial unless you cancel.</p>
+            {ActionButton(safeUrl, "Add payment method")}
             <p style="margin:22px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:#687b73;">WiseLine provides investment context and tooling, not individualized financial advice.</p>
             """;
-        var text = $"Hello {displayName},\n\nWelcome to WiseLine Trade. Open your account:\n{accountUrl}\n\nWiseLine provides investment context and tooling, not individualized financial advice.";
+        var text = $"Hello {displayName},\n\nWelcome to WiseLine Trade. Add a payment method to start your 14-day trial and unlock MCP access. You will not be charged today; billing begins at $10 per month after the trial unless you cancel.\n\nAdd a payment method:\n{accountUrl}\n\nWiseLine provides investment context and tooling, not individualized financial advice.";
         return new RenderedEmail(subject, Layout("Welcome", content), text);
     }
 
