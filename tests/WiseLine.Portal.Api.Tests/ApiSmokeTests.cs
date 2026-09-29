@@ -28,11 +28,11 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
     }
 
     [Fact]
-    public async Task CurrentUser_RequiresAuthentication()
+    public async Task CurrentUser_ReturnsNoContentForAnonymousVisitor()
     {
         var response = await _client.GetAsync("/api/auth/me");
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
     [Fact]
@@ -43,6 +43,10 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
         Assert.Equal("utf-8", response.Content.Headers.ContentType?.CharSet);
+        Assert.Contains(
+            "https://static.cloudflareinsights.com",
+            response.Headers.GetValues("Content-Security-Policy").Single(),
+            StringComparison.Ordinal);
     }
 
     [Fact]

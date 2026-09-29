@@ -155,7 +155,8 @@ app.Use(async (context, next) =>
     context.Response.Headers.XContentTypeOptions = "nosniff";
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     context.Response.Headers.ContentSecurityPolicy =
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
+        "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; " +
+        "style-src 'self' 'unsafe-inline'; " +
         "img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; " +
         "base-uri 'self'; frame-ancestors 'none'; form-action 'self' https://accounts.google.com";
     context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");

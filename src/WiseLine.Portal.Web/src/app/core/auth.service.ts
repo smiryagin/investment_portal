@@ -44,7 +44,7 @@ export class AuthService {
     }
 
     if (!this.currentRequest) {
-      this.currentRequest = this.http.get<CurrentUser>('/api/auth/me').pipe(
+      this.currentRequest = this.http.get<CurrentUser | null>('/api/auth/me').pipe(
         tap((user) => this.currentUser.set(user)),
         catchError(() => {
           this.currentUser.set(null);

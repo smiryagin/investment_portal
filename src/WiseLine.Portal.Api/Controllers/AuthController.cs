@@ -138,10 +138,15 @@ public sealed class AuthController(
         return NoContent();
     }
 
-    [Authorize]
+    [AllowAnonymous]
     [HttpGet("me")]
     public async Task<ActionResult<CurrentUserResponse>> Me()
     {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            return NoContent();
+        }
+
         var user = await userManager.FindByIdAsync(User.GetRequiredUserId().ToString());
         if (user is null)
         {

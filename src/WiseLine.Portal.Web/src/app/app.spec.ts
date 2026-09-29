@@ -16,7 +16,7 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     const http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
-    http.expectOne('/api/auth/me').flush(null, { status: 401, statusText: 'Unauthorized' });
+    http.expectOne('/api/auth/me').flush(null, { status: 204, statusText: 'No Content' });
     fixture.detectChanges();
 
     expect(fixture.componentInstance).toBeTruthy();
