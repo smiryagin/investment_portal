@@ -36,44 +36,48 @@ public sealed class SubscriptionAccessService(
         var now = timeProvider.GetUtcNow();
         var normalizedCode = PromotionCode.Normalize(promotionCode);
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(
-            IsolationLevel.Serializable,
-            cancellationToken);
+        var subscription = await ResilientTransaction.ExecuteAsync(
+            dbContext,
+            async operationCancellationToken =>
+            {
+                var currentSubscription = await dbContext.Subscriptions
+                    .SingleOrDefaultAsync(x => x.UserId == userId, operationCancellationToken);
 
-        var subscription = await dbContext.Subscriptions
-            .SingleOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+                if (currentSubscription is null)
+                {
+                    currentSubscription = Subscription.CreatePending(userId, now);
+                    dbContext.Subscriptions.Add(currentSubscription);
+                }
 
-        if (subscription is null)
-        {
-            subscription = Subscription.CreatePending(userId, now);
-            dbContext.Subscriptions.Add(subscription);
-        }
+                var code = await dbContext.PromotionCodes
+                    .SingleOrDefaultAsync(x => x.Code == normalizedCode, operationCancellationToken);
 
-        var code = await dbContext.PromotionCodes
-            .SingleOrDefaultAsync(x => x.Code == normalizedCode, cancellationToken);
+                if (code is null || !code.CanRedeemAt(now))
+                {
+                    throw new InvalidOperationException("Promotion code is invalid or no longer available.");
+                }
 
-        if (code is null || !code.CanRedeemAt(now))
-        {
-            throw new InvalidOperationException("Promotion code is invalid or no longer available.");
-        }
+                var alreadyRedeemed = await dbContext.PromotionRedemptions
+                    .AnyAsync(
+                        x => x.PromotionCodeId == code.Id && x.UserId == userId,
+                        operationCancellationToken);
 
-        var alreadyRedeemed = await dbContext.PromotionRedemptions
-            .AnyAsync(
-                x => x.PromotionCodeId == code.Id && x.UserId == userId,
-                cancellationToken);
+                if (alreadyRedeemed)
+                {
+                    throw new InvalidOperationException("This promotion code has already been redeemed.");
+                }
 
-        if (alreadyRedeemed)
-        {
-            throw new InvalidOperationException("This promotion code has already been redeemed.");
-        }
+                code.RecordRedemption(now);
+                currentSubscription.ExtendTrial(code.TrialExtensionDays, now);
+                dbContext.PromotionRedemptions.Add(new PromotionRedemption(code.Id, userId, now));
+                dbContext.TradeEntitlementSyncRequests.Add(new TradeEntitlementSyncRequest(userId, now));
 
-        code.RecordRedemption(now);
-        subscription.ExtendTrial(code.TrialExtensionDays, now);
-        dbContext.PromotionRedemptions.Add(new PromotionRedemption(code.Id, userId, now));
-        dbContext.TradeEntitlementSyncRequests.Add(new TradeEntitlementSyncRequest(userId, now));
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return currentSubscription;
+            },
+            _ => true,
+            cancellationToken,
+            IsolationLevel.Serializable);
 
         return Map(subscription);
     }

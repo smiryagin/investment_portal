@@ -123,6 +123,66 @@ form {
   display: grid;
   gap: 1rem;
 }
+
+.field input.input-error {
+  border-color: #c75050;
+  background: #fffafa;
+  box-shadow: 0 0 0 3px rgba(199, 80, 80, 0.1);
+}
+
+.password-guidance {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #f7faf8;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.password-guidance strong {
+  display: block;
+  margin-bottom: 0.55rem;
+  color: var(--ink);
+  font-size: 0.8rem;
+}
+
+.password-guidance ul {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.38rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.password-requirement {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.password-requirement > span {
+  width: 1rem;
+  color: #8a9792;
+  font-weight: 800;
+  text-align: center;
+}
+
+.password-requirement.met,
+.password-requirement.met > span {
+  color: var(--success);
+}
+
+.password-requirement.unmet,
+.password-requirement.unmet > span,
+.field-error {
+  color: #a43b3b;
+}
+
+.field-error {
+  font-size: 0.76rem;
+  font-weight: 650;
+}
 .terms-row {
   display: flex;
   gap: 0.65rem;
@@ -163,6 +223,12 @@ form {
   .trial-panel > * {
     width: min(560px, 100%);
     margin-inline: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .password-guidance ul {
+    grid-template-columns: 1fr;
   }
 }
 

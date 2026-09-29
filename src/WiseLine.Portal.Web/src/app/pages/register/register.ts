@@ -21,9 +21,43 @@ export class RegisterPage {
   protected readonly form = this.formBuilder.nonNullable.group({
     displayName: ['', [Validators.required, Validators.maxLength(120)]],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(12), Validators.maxLength(128)]],
+    password: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(12),
+        Validators.maxLength(128),
+        Validators.pattern(
+          /^(?=[\s\S]*\p{Ll})(?=[\s\S]*\p{Lu})(?=[\s\S]*\p{Nd})(?=[\s\S]*[^\p{L}\p{N}])[\s\S]*$/u,
+        ),
+      ],
+    ],
     termsAccepted: [false, Validators.requiredTrue],
   });
+
+  protected passwordHasValue(): boolean {
+    return this.form.controls.password.value.length > 0;
+  }
+
+  protected passwordHasMinimumLength(): boolean {
+    return this.form.controls.password.value.length >= 12;
+  }
+
+  protected passwordHasUppercase(): boolean {
+    return /\p{Lu}/u.test(this.form.controls.password.value);
+  }
+
+  protected passwordHasLowercase(): boolean {
+    return /\p{Ll}/u.test(this.form.controls.password.value);
+  }
+
+  protected passwordHasNumber(): boolean {
+    return /\p{Nd}/u.test(this.form.controls.password.value);
+  }
+
+  protected passwordHasSymbol(): boolean {
+    return /[^\p{L}\p{N}]/u.test(this.form.controls.password.value);
+  }
 
   protected submit(): void {
     if (this.form.invalid || this.submitting()) {

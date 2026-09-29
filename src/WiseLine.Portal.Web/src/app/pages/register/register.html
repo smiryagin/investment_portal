@@ -63,10 +63,69 @@
           type="password"
           formControlName="password"
           autocomplete="new-password"
+          aria-describedby="password-requirements password-error"
+          [attr.aria-invalid]="
+            form.controls.password.invalid &&
+            (form.controls.password.dirty || form.controls.password.touched)
+          "
+          [class.input-error]="
+            form.controls.password.invalid &&
+            (form.controls.password.dirty || form.controls.password.touched)
+          "
         />
-        <span class="hint"
-          >At least 12 characters with uppercase, lowercase, number, and symbol.</span
-        >
+        <div id="password-requirements" class="password-guidance">
+          <strong>Your password must include:</strong>
+          <ul>
+            <li
+              class="password-requirement"
+              [class.met]="passwordHasMinimumLength()"
+              [class.unmet]="passwordHasValue() && !passwordHasMinimumLength()"
+            >
+              <span aria-hidden="true">{{ passwordHasMinimumLength() ? '✓' : '•' }}</span>
+              At least 12 characters
+            </li>
+            <li
+              class="password-requirement"
+              [class.met]="passwordHasUppercase()"
+              [class.unmet]="passwordHasValue() && !passwordHasUppercase()"
+            >
+              <span aria-hidden="true">{{ passwordHasUppercase() ? '✓' : '•' }}</span>
+              One uppercase letter
+            </li>
+            <li
+              class="password-requirement"
+              [class.met]="passwordHasLowercase()"
+              [class.unmet]="passwordHasValue() && !passwordHasLowercase()"
+            >
+              <span aria-hidden="true">{{ passwordHasLowercase() ? '✓' : '•' }}</span>
+              One lowercase letter
+            </li>
+            <li
+              class="password-requirement"
+              [class.met]="passwordHasNumber()"
+              [class.unmet]="passwordHasValue() && !passwordHasNumber()"
+            >
+              <span aria-hidden="true">{{ passwordHasNumber() ? '✓' : '•' }}</span>
+              One number
+            </li>
+            <li
+              class="password-requirement"
+              [class.met]="passwordHasSymbol()"
+              [class.unmet]="passwordHasValue() && !passwordHasSymbol()"
+            >
+              <span aria-hidden="true">{{ passwordHasSymbol() ? '✓' : '•' }}</span>
+              One symbol
+            </li>
+          </ul>
+        </div>
+        @if (
+          form.controls.password.invalid &&
+          (form.controls.password.dirty || form.controls.password.touched)
+        ) {
+          <span id="password-error" class="field-error" role="alert"
+            >Your password does not meet all requirements.</span
+          >
+        }
       </div>
       <label class="terms-row"
         ><input type="checkbox" formControlName="termsAccepted" /><span

@@ -33,4 +33,51 @@ describe('RegisterPage', () => {
 
     expect(auth.googleLogin).toHaveBeenCalledWith('/account');
   });
+
+  it('shows password requirements as the user types', () => {
+    const fixture = TestBed.createComponent(RegisterPage);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const password = element.querySelector<HTMLInputElement>('#password')!;
+
+    password.value = 'lowercaseonly';
+    password.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(element.querySelectorAll('.password-requirement.met').length).toBe(2);
+    expect(element.querySelectorAll('.password-requirement.unmet').length).toBe(3);
+    expect(element.querySelector('.field-error')?.textContent).toContain(
+      'does not meet all requirements',
+    );
+
+    password.value = 'StrongPassword1!';
+    password.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(element.querySelectorAll('.password-requirement.met').length).toBe(5);
+    expect(element.querySelectorAll('.password-requirement.unmet').length).toBe(0);
+    expect(element.querySelector('.field-error')).toBeNull();
+  });
+
+  it('does not submit an incorrectly formatted password', () => {
+    const fixture = TestBed.createComponent(RegisterPage);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const setInput = (selector: string, value: string) => {
+      const input = element.querySelector<HTMLInputElement>(selector)!;
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+    };
+
+    setInput('#displayName', 'Andrey');
+    setInput('#email', 'andrey@example.com');
+    setInput('#password', 'lowercaseonly');
+    element.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click();
+    element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    expect(auth.register).not.toHaveBeenCalled();
+  });
 });

@@ -44,30 +44,41 @@ public sealed class AuthController(
             CreatedAt = now
         };
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        var result = await userManager.CreateAsync(user, request.Password);
+        var result = await ResilientTransaction.ExecuteAsync(
+            dbContext,
+            async operationCancellationToken =>
+            {
+                var createResult = await userManager.CreateAsync(user, request.Password);
+                if (!createResult.Succeeded)
+                {
+                    return createResult;
+                }
+
+                dbContext.UserProfiles.Add(new UserProfile(user.Id, user.DisplayName, now));
+                dbContext.Subscriptions.Add(Subscription.CreatePending(user.Id, now));
+                var confirmationToken = await userManager.GenerateEmailConfirmationTokenAsync(user);
+                emailOutbox.QueueEmailConfirmation(
+                    user.Id,
+                    email,
+                    user.DisplayName,
+                    BuildPublicUrl(
+                        "/api/auth/email-confirmation/confirm",
+                        new Dictionary<string, string?>
+                        {
+                            ["userId"] = user.Id.ToString(),
+                            ["token"] = EncodeToken(confirmationToken)
+                        }),
+                    now);
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return createResult;
+            },
+            createResult => createResult.Succeeded,
+            cancellationToken);
+
         if (!result.Succeeded)
         {
             return ValidationProblem(new ValidationProblemDetails(ToValidationErrors(result)));
         }
-
-        dbContext.UserProfiles.Add(new UserProfile(user.Id, user.DisplayName, now));
-        dbContext.Subscriptions.Add(Subscription.CreatePending(user.Id, now));
-        var confirmationToken = await userManager.GenerateEmailConfirmationTokenAsync(user);
-        emailOutbox.QueueEmailConfirmation(
-            user.Id,
-            email,
-            user.DisplayName,
-            BuildPublicUrl(
-                "/api/auth/email-confirmation/confirm",
-                new Dictionary<string, string?>
-                {
-                    ["userId"] = user.Id.ToString(),
-                    ["token"] = EncodeToken(confirmationToken)
-                }),
-            now);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
         await signInManager.SignInAsync(user, isPersistent: false);
 
         return Ok(new CurrentUserResponse(user.Id, email, user.DisplayName, false, user.EmailConfirmed));
@@ -211,24 +222,35 @@ public sealed class AuthController(
 
         if (!user.EmailConfirmed)
         {
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-            var result = await userManager.ConfirmEmailAsync(user, decodedToken);
+            var result = await ResilientTransaction.ExecuteAsync(
+                dbContext,
+                async operationCancellationToken =>
+                {
+                    var confirmationResult = await userManager.ConfirmEmailAsync(user, decodedToken);
+                    if (!confirmationResult.Succeeded)
+                    {
+                        return confirmationResult;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(user.Email))
+                    {
+                        emailOutbox.QueueWelcome(
+                            user.Id,
+                            user.Email,
+                            user.DisplayName,
+                            timeProvider.GetUtcNow());
+                        await dbContext.SaveChangesAsync(operationCancellationToken);
+                    }
+
+                    return confirmationResult;
+                },
+                confirmationResult => confirmationResult.Succeeded,
+                cancellationToken);
+
             if (!result.Succeeded)
             {
                 return LocalRedirect("/login?emailConfirmation=invalid");
             }
-
-            if (!string.IsNullOrWhiteSpace(user.Email))
-            {
-                emailOutbox.QueueWelcome(
-                    user.Id,
-                    user.Email,
-                    user.DisplayName,
-                    timeProvider.GetUtcNow());
-                await dbContext.SaveChangesAsync(cancellationToken);
-            }
-
-            await transaction.CommitAsync(cancellationToken);
         }
 
         return LocalRedirect("/account?emailConfirmed=true");
@@ -339,52 +361,64 @@ public sealed class AuthController(
                 return LocalRedirect("/login?externalError=email-is-required");
             }
 
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-            var user = await userManager.FindByEmailAsync(email);
-            var isNewUser = user is null;
-            if (isNewUser)
-            {
-                var now = timeProvider.GetUtcNow();
-                var displayName = info.Principal.FindFirstValue(ClaimTypes.Name) ?? email.Split('@')[0];
-                user = new PortalUser
+            var provisioningResult = await ResilientTransaction.ExecuteAsync<(PortalUser? User, string? Error)>(
+                dbContext,
+                async operationCancellationToken =>
                 {
-                    Id = Guid.NewGuid(),
-                    UserName = email.ToLowerInvariant(),
-                    Email = email.ToLowerInvariant(),
-                    EmailConfirmed = true,
-                    DisplayName = displayName,
-                    CreatedAt = now
-                };
+                    var user = await userManager.FindByEmailAsync(email);
+                    var isNewUser = user is null;
+                    if (isNewUser)
+                    {
+                        var now = timeProvider.GetUtcNow();
+                        var displayName = info.Principal.FindFirstValue(ClaimTypes.Name) ?? email.Split('@')[0];
+                        user = new PortalUser
+                        {
+                            Id = Guid.NewGuid(),
+                            UserName = email.ToLowerInvariant(),
+                            Email = email.ToLowerInvariant(),
+                            EmailConfirmed = true,
+                            DisplayName = displayName,
+                            CreatedAt = now
+                        };
 
-                var createResult = await userManager.CreateAsync(user);
-                if (!createResult.Succeeded)
-                {
-                    return LocalRedirect("/login?externalError=account-creation-failed");
-                }
+                        var createResult = await userManager.CreateAsync(user);
+                        if (!createResult.Succeeded)
+                        {
+                            return (null, "account-creation-failed");
+                        }
 
-                dbContext.UserProfiles.Add(new UserProfile(user.Id, displayName, now));
-                dbContext.Subscriptions.Add(Subscription.CreatePending(user.Id, now));
-                emailOutbox.QueueWelcome(user.Id, user.Email, displayName, now);
-            }
-            else if (!user!.EmailConfirmed)
+                        dbContext.UserProfiles.Add(new UserProfile(user.Id, displayName, now));
+                        dbContext.Subscriptions.Add(Subscription.CreatePending(user.Id, now));
+                        emailOutbox.QueueWelcome(user.Id, user.Email, displayName, now);
+                    }
+                    else if (!user!.EmailConfirmed)
+                    {
+                        user.EmailConfirmed = true;
+                        var updateResult = await userManager.UpdateAsync(user);
+                        if (!updateResult.Succeeded)
+                        {
+                            return (null, "account-update-failed");
+                        }
+                    }
+
+                    var addLoginResult = await userManager.AddLoginAsync(user!, info);
+                    if (!addLoginResult.Succeeded)
+                    {
+                        return (null, "login-link-failed");
+                    }
+
+                    await dbContext.SaveChangesAsync(operationCancellationToken);
+                    return (user, null);
+                },
+                result => result.Error is null,
+                cancellationToken);
+
+            if (provisioningResult.Error is not null)
             {
-                user.EmailConfirmed = true;
-                var updateResult = await userManager.UpdateAsync(user);
-                if (!updateResult.Succeeded)
-                {
-                    return LocalRedirect("/login?externalError=account-update-failed");
-                }
+                return LocalRedirect($"/login?externalError={provisioningResult.Error}");
             }
 
-            var addLoginResult = await userManager.AddLoginAsync(user!, info);
-            if (!addLoginResult.Succeeded)
-            {
-                return LocalRedirect("/login?externalError=login-link-failed");
-            }
-
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-            await signInManager.SignInAsync(user!, isPersistent: false);
+            await signInManager.SignInAsync(provisioningResult.User!, isPersistent: false);
         }
 
         return LocalRedirect(safeReturnUrl!);
