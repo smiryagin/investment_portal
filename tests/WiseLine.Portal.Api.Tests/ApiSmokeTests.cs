@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -13,7 +14,8 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
     {
         _client = factory.CreateClient(new WebApplicationFactoryClientOptions
         {
-            AllowAutoRedirect = false
+            AllowAutoRedirect = false,
+            BaseAddress = new Uri("https://localhost")
         });
     }
 
@@ -59,6 +61,47 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
         var response = await _client.PostAsync("/api/webhooks/resend", content);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CsrfToken_AllowsProtectedPostToReachModelValidation()
+    {
+        var tokenResponse = await _client.GetAsync("/api/security/csrf");
+        var requestToken = tokenResponse.Headers
+            .GetValues("Set-Cookie")
+            .Select(ParseXsrfRequestToken)
+            .FirstOrDefault(value => value is not null);
+
+        Assert.Equal(HttpStatusCode.NoContent, tokenResponse.StatusCode);
+        Assert.NotNull(requestToken);
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/register")
+        {
+            Content = new StringContent("{}", Encoding.UTF8, "application/json")
+        };
+        request.Headers.Add("X-XSRF-TOKEN", requestToken);
+
+        var response = await _client.SendAsync(request);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("\"errors\"", responseBody, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Email", responseBody, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? ParseXsrfRequestToken(string setCookieHeader)
+    {
+        const string prefix = "XSRF-TOKEN=";
+        if (!setCookieHeader.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var separator = setCookieHeader.IndexOf(';');
+        var encodedValue = separator < 0
+            ? setCookieHeader[prefix.Length..]
+            : setCookieHeader[prefix.Length..separator];
+        return Uri.UnescapeDataString(encodedValue);
     }
 }
 

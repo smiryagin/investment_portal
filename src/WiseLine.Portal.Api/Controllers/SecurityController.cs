@@ -12,7 +12,24 @@ public sealed class SecurityController(IAntiforgery antiforgery) : ControllerBas
     [HttpGet("csrf")]
     public IActionResult GetCsrfToken()
     {
-        antiforgery.GetAndStoreTokens(HttpContext);
+        var tokens = antiforgery.GetAndStoreTokens(HttpContext);
+        if (string.IsNullOrWhiteSpace(tokens.RequestToken))
+        {
+            throw new InvalidOperationException("The antiforgery request token could not be generated.");
+        }
+
+        Response.Cookies.Append(
+            "XSRF-TOKEN",
+            tokens.RequestToken,
+            new CookieOptions
+            {
+                HttpOnly = false,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Path = "/",
+                IsEssential = true
+            });
+        Response.Headers.CacheControl = "no-store";
         return NoContent();
     }
 }

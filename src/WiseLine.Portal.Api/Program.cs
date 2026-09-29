@@ -75,10 +75,11 @@ builder.Services.AddAuthorization();
 builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-XSRF-TOKEN";
-    options.Cookie.Name = "XSRF-TOKEN";
-    options.Cookie.HttpOnly = false;
+    options.Cookie.Name = "__Host-WiseLinePortal.Antiforgery";
+    options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Strict;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.Path = "/";
 });
 
 builder.Services.AddControllersWithViews(options =>
