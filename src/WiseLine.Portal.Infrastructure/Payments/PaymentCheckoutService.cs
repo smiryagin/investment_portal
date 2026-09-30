@@ -221,4 +221,40 @@ public sealed class PaymentCheckoutService(
         return document.RootElement.GetProperty("access_token").GetString()
             ?? throw new PaymentProviderUnavailableException("PayPal did not return an access token.");
     }
+
+    internal static async Task<JsonElement> GetPayPalSubscriptionAsync(
+        HttpClient client,
+        PayPalOptions payPal,
+        string accessToken,
+        string subscriptionId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            throw new ArgumentException("A PayPal access token is required.", nameof(accessToken));
+        }
+
+        if (string.IsNullOrWhiteSpace(subscriptionId))
+        {
+            throw new ArgumentException("A PayPal subscription identifier is required.", nameof(subscriptionId));
+        }
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            new Uri(
+                new Uri(payPal.BaseUrl.TrimEnd('/') + "/"),
+                $"v1/billing/subscriptions/{Uri.EscapeDataString(subscriptionId)}"));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        using var response = await client.SendAsync(request, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new PaymentProviderUnavailableException(
+                $"PayPal subscription lookup returned HTTP {(int)response.StatusCode}.");
+        }
+
+        using var document = JsonDocument.Parse(body);
+        return document.RootElement.Clone();
+    }
 }

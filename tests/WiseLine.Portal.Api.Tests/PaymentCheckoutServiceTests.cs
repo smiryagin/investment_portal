@@ -48,6 +48,40 @@ public sealed class PaymentCheckoutServiceTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task GetPayPalSubscriptionAsync_UsesAuthenticatedSubscriptionEndpoint()
+    {
+        var handler = new RecordingHandler(
+            """
+            {
+              "id": "I-TEST-SUBSCRIPTION",
+              "status": "ACTIVE",
+              "billing_info": {
+                "next_billing_time": "2026-11-14T18:00:00Z"
+              }
+            }
+            """);
+        using var client = new HttpClient(handler, disposeHandler: false);
+
+        var result = await PaymentCheckoutService.GetPayPalSubscriptionAsync(
+            client,
+            new PayPalOptions
+            {
+                BaseUrl = "https://api-m.sandbox.paypal.com"
+            },
+            "sandbox-access-token",
+            "I-TEST-SUBSCRIPTION",
+            CancellationToken.None);
+
+        Assert.Equal("I-TEST-SUBSCRIPTION", result.GetProperty("id").GetString());
+        Assert.Equal(HttpMethod.Get, handler.Method);
+        Assert.Equal(
+            "https://api-m.sandbox.paypal.com/v1/billing/subscriptions/I-TEST-SUBSCRIPTION",
+            handler.RequestUri?.ToString());
+        Assert.Equal("Bearer", handler.AuthorizationScheme);
+        Assert.Equal("sandbox-access-token", handler.AuthorizationParameter);
+    }
+
     private sealed class TestHttpClientFactory(HttpMessageHandler handler) : IHttpClientFactory
     {
         public HttpClient CreateClient(string name) => new(handler, disposeHandler: false);

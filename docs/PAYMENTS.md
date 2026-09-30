@@ -24,7 +24,7 @@ Create a webhook endpoint for:
 https://wiselinetrade.com/api/payments/webhooks/paypal
 ```
 
-Subscribe to subscription activated, updated, suspended, canceled, expired, and payment-failed events. Save the PayPal webhook ID; every notification is verified with PayPal before it changes subscription state.
+Subscribe to subscription created, activated, updated, suspended, canceled, expired, payment-failed, and `PAYMENT.SALE.COMPLETED` events. The completed-sale event promotes a successful post-trial payment to an active portal subscription and refreshes its billing period. Save the PayPal webhook ID; every notification is verified with PayPal before it changes subscription state.
 
 ## Important behavior
 

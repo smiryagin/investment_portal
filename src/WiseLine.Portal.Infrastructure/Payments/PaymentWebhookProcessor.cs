@@ -71,7 +71,7 @@ public sealed class PaymentWebhookProcessor(
     {
         using var document = JsonDocument.Parse(payload);
         var root = document.RootElement;
-        await VerifyPayPalSignatureAsync(root, headers, cancellationToken);
+        var accessToken = await VerifyPayPalSignatureAsync(root, headers, cancellationToken);
 
         var eventId = GetRequiredString(root, "id");
         var eventType = GetRequiredString(root, "event_type");
@@ -89,6 +89,16 @@ public sealed class PaymentWebhookProcessor(
                 portalUserId = await ApplyPayPalSubscriptionAsync(
                     eventType,
                     root.GetProperty("resource"),
+                    cancellationToken);
+            }
+            else if (string.Equals(
+                         eventType,
+                         PayPalSubscriptionStateApplier.PaymentCompleted,
+                         StringComparison.Ordinal))
+            {
+                portalUserId = await ApplyPayPalCompletedSaleAsync(
+                    root.GetProperty("resource"),
+                    accessToken,
                     cancellationToken);
             }
 
@@ -124,7 +134,7 @@ public sealed class PaymentWebhookProcessor(
             timeProvider.GetUtcNow());
     }
 
-    private async Task VerifyPayPalSignatureAsync(
+    private async Task<string> VerifyPayPalSignatureAsync(
         JsonElement webhookEvent,
         IReadOnlyDictionary<string, string> headers,
         CancellationToken cancellationToken)
@@ -171,6 +181,8 @@ public sealed class PaymentWebhookProcessor(
         {
             throw new InvalidWebhookSignatureException("PayPal webhook signature is invalid.");
         }
+
+        return accessToken;
     }
 
     private async Task<Guid?> ApplyStripeSubscriptionAsync(
@@ -234,32 +246,37 @@ public sealed class PaymentWebhookProcessor(
             : subscription.ProviderCustomerId ?? "unknown";
         var nextBilling = GetNestedDate(resource, "billing_info", "next_billing_time") ?? now.AddMonths(1);
 
-        switch (eventType)
-        {
-            case "BILLING.SUBSCRIPTION.ACTIVATED":
-                if (subscription.Status == SubscriptionStatus.Pending)
-                {
-                    var trialEnd = nextBilling > now ? nextBilling : now.AddDays(PlanCatalog.StandardTrialDays);
-                    subscription.BeginTrial(PaymentProvider.PayPal, customerId, providerSubscriptionId, trialEnd, now);
-                }
-                else
-                {
-                    subscription.Activate(PaymentProvider.PayPal, customerId, providerSubscriptionId, nextBilling, now);
-                }
-                break;
-            case "BILLING.SUBSCRIPTION.SUSPENDED":
-            case "BILLING.SUBSCRIPTION.PAYMENT.FAILED":
-                subscription.MarkPastDue(now);
-                break;
-            case "BILLING.SUBSCRIPTION.CANCELLED":
-                subscription.Cancel(now);
-                break;
-            case "BILLING.SUBSCRIPTION.EXPIRED":
-                subscription.Expire(now);
-                break;
-        }
+        PayPalSubscriptionStateApplier.Apply(
+            subscription,
+            eventType,
+            GetOptionalString(resource, "status"),
+            customerId,
+            providerSubscriptionId,
+            EnsureFutureDate(nextBilling, now),
+            now);
 
         return subscription.UserId;
+    }
+
+    private async Task<Guid?> ApplyPayPalCompletedSaleAsync(
+        JsonElement resource,
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        var providerSubscriptionId =
+            PayPalWebhookResourceParser.GetCompletedSaleSubscriptionId(resource);
+        var client = httpClientFactory.CreateClient("PayPal");
+        var subscriptionResource = await PaymentCheckoutService.GetPayPalSubscriptionAsync(
+            client,
+            _options.PayPal,
+            accessToken,
+            providerSubscriptionId,
+            cancellationToken);
+
+        return await ApplyPayPalSubscriptionAsync(
+            PayPalSubscriptionStateApplier.PaymentCompleted,
+            subscriptionResource,
+            cancellationToken);
     }
 
     private async Task<Subscription?> FindSubscriptionAsync(
@@ -355,6 +372,9 @@ public sealed class PaymentWebhookProcessor(
             ? result
             : null;
     }
+
+    private static DateTimeOffset EnsureFutureDate(DateTimeOffset value, DateTimeOffset now) =>
+        value > now ? value : now.AddMonths(1);
 
     private static string GetRequiredString(JsonElement element, string propertyName) =>
         GetOptionalString(element, propertyName)
