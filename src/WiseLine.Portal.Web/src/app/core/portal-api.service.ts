@@ -57,4 +57,10 @@ export class PortalApiService {
         switchMap(() => this.http.post<CheckoutResponse>(`/api/payments/checkout/${provider}`, {})),
       );
   }
+
+  createBillingPortal(): Observable<CheckoutResponse> {
+    return this.auth
+      .ensureCsrf()
+      .pipe(switchMap(() => this.http.post<CheckoutResponse>('/api/payments/billing-portal', {})));
+  }
 }

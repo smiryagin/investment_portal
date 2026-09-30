@@ -129,6 +129,33 @@ dd {
   gap: 0.7rem;
   margin-top: 1rem;
 }
+.billing-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--cream);
+}
+.billing-actions strong {
+  color: var(--green-900);
+  font-size: 0.88rem;
+}
+.billing-actions p,
+.cancellation-notice {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+.cancellation-notice {
+  padding: 0.8rem 1rem;
+  border-left: 3px solid var(--green-600);
+  background: #f4faf7;
+}
 .promotion-card h2 {
   font-size: 1.25rem;
 }
@@ -150,6 +177,10 @@ dd {
 @media (max-width: 620px) {
   .plan-heading,
   .promotion-card form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .billing-actions {
     align-items: stretch;
     flex-direction: column;
   }

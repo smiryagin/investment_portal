@@ -82,6 +82,28 @@ public sealed class SubscriptionAccessService(
         return Map(subscription);
     }
 
+    public async Task<SubscriptionBillingReference?> GetBillingReferenceAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var subscription = await dbContext.Subscriptions
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+
+        if (subscription is null ||
+            subscription.Provider == PaymentProvider.None ||
+            string.IsNullOrWhiteSpace(subscription.ProviderCustomerId) ||
+            string.IsNullOrWhiteSpace(subscription.ProviderSubscriptionId))
+        {
+            return null;
+        }
+
+        return new SubscriptionBillingReference(
+            subscription.Provider,
+            subscription.ProviderCustomerId,
+            subscription.ProviderSubscriptionId);
+    }
+
     private SubscriptionSnapshot Map(Subscription subscription)
     {
         var now = timeProvider.GetUtcNow();

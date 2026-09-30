@@ -80,6 +80,55 @@ public sealed class PaymentCheckoutService(
         return new CheckoutSession(redirectUrl, id);
     }
 
+    public async Task<CheckoutSession> CreateStripeBillingPortalAsync(
+        string customerId,
+        Uri returnUrl,
+        CancellationToken cancellationToken = default)
+    {
+        var stripe = _options.Stripe;
+        if (!stripe.Enabled || string.IsNullOrWhiteSpace(stripe.SecretKey))
+        {
+            throw new PaymentProviderUnavailableException(
+                "Stripe billing management is not configured for this environment.");
+        }
+
+        if (string.IsNullOrWhiteSpace(customerId))
+        {
+            throw new ArgumentException("A Stripe customer is required.", nameof(customerId));
+        }
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            "https://api.stripe.com/v1/billing_portal/sessions");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", stripe.SecretKey);
+        request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["customer"] = customerId,
+            ["return_url"] = returnUrl.ToString()
+        });
+
+        var client = httpClientFactory.CreateClient("Stripe");
+        using var response = await client.SendAsync(request, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new PaymentProviderUnavailableException(
+                $"Stripe billing portal returned HTTP {(int)response.StatusCode}.");
+        }
+
+        using var document = JsonDocument.Parse(body);
+        var root = document.RootElement;
+        var id = root.GetProperty("id").GetString();
+        var url = root.GetProperty("url").GetString();
+        if (string.IsNullOrWhiteSpace(id) || !Uri.TryCreate(url, UriKind.Absolute, out var redirectUrl))
+        {
+            throw new PaymentProviderUnavailableException(
+                "Stripe did not return a valid billing portal session.");
+        }
+
+        return new CheckoutSession(redirectUrl, id);
+    }
+
     private async Task<CheckoutSession> CreatePayPalCheckoutAsync(
         Guid userId,
         string email,

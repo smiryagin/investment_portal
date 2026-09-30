@@ -11,6 +11,11 @@ public interface IPaymentCheckoutService
         Uri returnUrl,
         Uri cancelUrl,
         CancellationToken cancellationToken = default);
+
+    Task<CheckoutSession> CreateStripeBillingPortalAsync(
+        string customerId,
+        Uri returnUrl,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed record CheckoutSession(Uri RedirectUrl, string ExternalSessionId);

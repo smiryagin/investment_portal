@@ -21,6 +21,7 @@ export class AccountPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly submitting = signal(false);
   protected readonly checkoutProvider = signal<'Stripe' | 'PayPal' | null>(null);
+  protected readonly openingBillingPortal = signal(false);
   protected readonly sendingConfirmation = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
@@ -72,6 +73,20 @@ export class AccountPage implements OnInit {
       });
   }
 
+  protected manageBilling(): void {
+    if (this.openingBillingPortal()) return;
+    this.error.set(null);
+    this.openingBillingPortal.set(true);
+    this.api
+      .createBillingPortal()
+      .pipe(finalize(() => this.openingBillingPortal.set(false)))
+      .subscribe({
+        next: (portal) => window.location.assign(portal.redirectUrl),
+        error: (error: unknown) =>
+          this.error.set(readableHttpError(error, 'Stripe billing management is unavailable.')),
+      });
+  }
+
   protected resendConfirmation(): void {
     if (this.sendingConfirmation()) return;
     this.error.set(null);
@@ -81,7 +96,8 @@ export class AccountPage implements OnInit {
       .resendEmailConfirmation()
       .pipe(finalize(() => this.sendingConfirmation.set(false)))
       .subscribe({
-        next: () => this.success.set('Confirmation email queued. Check your inbox and spam folder.'),
+        next: () =>
+          this.success.set('Confirmation email queued. Check your inbox and spam folder.'),
         error: (error: unknown) =>
           this.error.set(readableHttpError(error, 'The confirmation email could not be queued.')),
       });

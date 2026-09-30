@@ -74,6 +74,44 @@ public sealed class PaymentsController(
         }
     }
 
+    [Authorize]
+    [HttpPost("billing-portal")]
+    public async Task<ActionResult<CheckoutResponse>> CreateBillingPortal(
+        CancellationToken cancellationToken)
+    {
+        var userId = User.GetRequiredUserId();
+        var billingReference = await subscriptionService.GetBillingReferenceAsync(
+            userId,
+            cancellationToken);
+        if (billingReference is null || billingReference.Provider != PaymentProvider.Stripe)
+        {
+            return Conflict(new ProblemDetails
+            {
+                Title = "Stripe billing is unavailable",
+                Detail = "A Stripe subscription is required to manage billing in Stripe."
+            });
+        }
+
+        var baseUri = new Uri(options.Value.PublicBaseUrl.TrimEnd('/') + "/");
+        var returnUrl = new Uri(baseUri, "account?billing=returned");
+
+        try
+        {
+            var session = await checkoutService.CreateStripeBillingPortalAsync(
+                billingReference.ProviderCustomerId,
+                returnUrl,
+                cancellationToken);
+            return Ok(new CheckoutResponse(session.RedirectUrl.ToString(), session.ExternalSessionId));
+        }
+        catch (PaymentProviderUnavailableException exception)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "Billing management is temporarily unavailable",
+                detail: exception.Message);
+        }
+    }
+
     [AllowAnonymous]
     [IgnoreAntiforgeryToken]
     [DisableRateLimiting]

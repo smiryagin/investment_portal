@@ -96,6 +96,30 @@
               <dd>{{ plan.paymentProvider ?? 'Choose below' }}</dd>
             </div>
           </dl>
+          @if (plan.paymentProvider === 'Stripe' && plan.status !== 'Pending') {
+            <div class="billing-actions">
+              <div>
+                <strong>Billing and payment method</strong>
+                <p>
+                  Update your card, review invoices, or schedule cancellation securely in Stripe.
+                </p>
+              </div>
+              <button
+                class="button button-secondary"
+                type="button"
+                (click)="manageBilling()"
+                [disabled]="openingBillingPortal()"
+              >
+                {{ openingBillingPortal() ? 'Opening…' : 'Manage billing' }}
+              </button>
+            </div>
+            @if (plan.cancelAtPeriodEnd) {
+              <p class="cancellation-notice" role="status">
+                Cancellation is scheduled for the end of the current billing period. Access remains
+                active until then.
+              </p>
+            }
+          }
           @if (plan.status === 'Pending') {
             <div class="trial-start-callout">
               <strong>Start your 14-day free trial</strong>
