@@ -150,6 +150,17 @@ public sealed class Subscription
         UpdatedAt = now;
     }
 
+    public void ClearScheduledCancellation(DateTimeOffset now)
+    {
+        if (Status is SubscriptionStatus.Canceled or SubscriptionStatus.Expired)
+        {
+            return;
+        }
+
+        CancelAtPeriodEnd = false;
+        UpdatedAt = now;
+    }
+
     public void Cancel(DateTimeOffset now)
     {
         Status = SubscriptionStatus.Canceled;

@@ -194,31 +194,18 @@ public sealed class PaymentWebhookProcessor(
         var customerId = GetOptionalString(resource, "customer") ?? subscription.ProviderCustomerId ?? "unknown";
         var periodEnd = GetStripePeriodEnd(resource) ?? now.AddMonths(1);
         var trialEnd = GetUnixDate(resource, "trial_end");
+        var cancelAtPeriodEnd = resource.TryGetProperty("cancel_at_period_end", out var cancellationValue) &&
+            cancellationValue.ValueKind == JsonValueKind.True;
 
-        switch (status)
-        {
-            case "trialing" when trialEnd is { } end && end > now:
-                subscription.BeginTrial(PaymentProvider.Stripe, customerId, providerSubscriptionId, end, now);
-                break;
-            case "active":
-                subscription.Activate(PaymentProvider.Stripe, customerId, providerSubscriptionId, periodEnd, now);
-                break;
-            case "past_due":
-            case "unpaid":
-                subscription.MarkPastDue(now);
-                break;
-            case "canceled":
-                subscription.Cancel(now);
-                break;
-            case "incomplete_expired":
-                subscription.Expire(now);
-                break;
-        }
-
-        if (resource.TryGetProperty("cancel_at_period_end", out var cancelAtPeriodEnd) && cancelAtPeriodEnd.ValueKind == JsonValueKind.True)
-        {
-            subscription.ScheduleCancellation(now);
-        }
+        StripeSubscriptionStateApplier.Apply(
+            subscription,
+            status,
+            customerId,
+            providerSubscriptionId,
+            periodEnd,
+            trialEnd,
+            cancelAtPeriodEnd,
+            now);
 
         return subscription.UserId;
     }
