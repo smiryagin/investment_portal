@@ -170,6 +170,13 @@
   gap: 1rem;
   margin: 1.2rem 0;
 }
+.field-error {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--danger);
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
 .create-panel-cta {
   margin: 1.2rem 0;
 }

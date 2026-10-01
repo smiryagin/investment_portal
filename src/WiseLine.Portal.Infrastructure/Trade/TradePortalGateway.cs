@@ -150,20 +150,35 @@ public sealed class TradePortalGateway(
         await connection.OpenAsync(cancellationToken);
         await using var command = CreateCommand(connection, _options.CreateMcpTokenProcedure, tradeUserId);
         command.Parameters.Add(new SqlParameter("@DisplayName", SqlDbType.NVarChar, 100) { Value = displayName.Trim() });
-        await using var reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken);
-
-        if (!await reader.ReadAsync(cancellationToken))
+        try
         {
-            throw new InvalidOperationException("The Trade database did not return the created MCP token.");
-        }
+            await using var reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken);
 
-        return new McpTokenCreated(
-            reader.GetGuid(reader.GetOrdinal("TokenId")),
-            reader.GetString(reader.GetOrdinal("DisplayName")),
-            reader.GetString(reader.GetOrdinal("Token")),
-            reader.GetString(reader.GetOrdinal("TokenPrefix")),
-            reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("CreatedAt")),
-            GetNullableDateTimeOffset(reader, "ExpiresAt"));
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                throw new InvalidOperationException("The Trade database did not return the created MCP token.");
+            }
+
+            return new McpTokenCreated(
+                reader.GetGuid(reader.GetOrdinal("TokenId")),
+                reader.GetString(reader.GetOrdinal("DisplayName")),
+                reader.GetString(reader.GetOrdinal("Token")),
+                reader.GetString(reader.GetOrdinal("TokenPrefix")),
+                reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("CreatedAt")),
+                GetNullableDateTimeOffset(reader, "ExpiresAt"));
+        }
+        catch (SqlException exception) when (exception.Number == 50015)
+        {
+            throw new McpTokenNameConflictException(
+                "You already have an active token with this name.",
+                exception);
+        }
+        catch (SqlException exception) when (exception.Number == 50014)
+        {
+            throw new McpTokenLimitReachedException(
+                "You can have at most two active MCP tokens. Revoke one before creating another.",
+                exception);
+        }
     }
 
     public async Task RevokeMcpTokenAsync(

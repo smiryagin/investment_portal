@@ -53,6 +53,22 @@ public sealed class McpAccessController(
                 cancellationToken);
             return Created($"/api/mcp-tokens/{result.Id}", result);
         }
+        catch (McpTokenNameConflictException exception)
+        {
+            return Conflict(new ProblemDetails
+            {
+                Title = "Duplicate token name",
+                Detail = exception.Message
+            });
+        }
+        catch (McpTokenLimitReachedException exception)
+        {
+            return Conflict(new ProblemDetails
+            {
+                Title = "Active token limit reached",
+                Detail = exception.Message
+            });
+        }
         catch (TradeIntegrationUnavailableException exception)
         {
             return TradeUnavailable(exception);

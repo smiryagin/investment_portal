@@ -47,7 +47,7 @@ Additional parameter: `@DisplayName nvarchar(100)`.
 
 Creates a cryptographically random, hashed-at-rest token for the resolved user. Returns one row with `TokenId`, `DisplayName`, `Token`, `TokenPrefix`, `CreatedAt`, and `ExpiresAt`. `Token` is returned exactly once.
 
-The Trade implementation must enforce the agreed per-user token limit and entitlement rules transactionally.
+The Trade implementation must enforce the agreed per-user token limit, entitlement rules, and case-insensitive uniqueness of active token display names transactionally. A display name may be reused after its previous token is revoked or expires.
 
 ## `invest.Portal_RevokeMcpToken`
 

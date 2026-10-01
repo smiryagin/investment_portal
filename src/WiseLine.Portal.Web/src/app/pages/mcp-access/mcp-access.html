@@ -108,9 +108,26 @@
                 formControlName="displayName"
                 maxlength="100"
                 placeholder="Codex laptop"
+                [attr.aria-describedby]="
+                  form.controls.displayName.hasError('duplicateActiveTokenName')
+                    ? 'token-name-error'
+                    : null
+                "
               />
+              @if (
+                form.controls.displayName.touched &&
+                form.controls.displayName.hasError('duplicateActiveTokenName')
+              ) {
+                <span id="token-name-error" class="field-error" role="alert">
+                  You already have an active token with this name.
+                </span>
+              }
             </div>
-            <button class="button button-wide" type="submit" [disabled]="submitting()">
+            <button
+              class="button button-wide"
+              type="submit"
+              [disabled]="submitting() || form.invalid"
+            >
               {{ submitting() ? 'Creating…' : 'Create token' }}
             </button>
           </form>

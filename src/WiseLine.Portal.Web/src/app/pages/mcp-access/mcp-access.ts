@@ -25,7 +25,15 @@ export class McpAccessPage implements OnInit {
   protected readonly paymentRequired = signal(false);
   protected readonly copied = signal(false);
   protected readonly form = this.formBuilder.nonNullable.group({
-    displayName: ['', [Validators.required, Validators.maxLength(100)]],
+    displayName: [
+      '',
+      [
+        Validators.required,
+        Validators.maxLength(100),
+        (control) =>
+          this.hasActiveTokenName(control.value) ? { duplicateActiveTokenName: true } : null,
+      ],
+    ],
   });
 
   ngOnInit(): void {
@@ -76,10 +84,12 @@ export class McpAccessPage implements OnInit {
     }
 
     this.api.revokeMcpToken(token.id).subscribe({
-      next: () =>
+      next: () => {
         this.tokens.update((tokens) =>
           tokens.map((item) => (item.id === token.id ? { ...item, isRevoked: true } : item)),
-        ),
+        );
+        this.form.controls.displayName.updateValueAndValidity({ emitEvent: false });
+      },
       error: (error: unknown) => this.handleError(error, 'The token could not be revoked.'),
     });
   }
@@ -92,6 +102,7 @@ export class McpAccessPage implements OnInit {
         next: (tokens) => {
           this.paymentRequired.set(false);
           this.tokens.set(tokens);
+          this.form.controls.displayName.updateValueAndValidity({ emitEvent: false });
         },
         error: (error: unknown) => this.handleError(error, 'MCP token information is unavailable.'),
       });
@@ -105,5 +116,17 @@ export class McpAccessPage implements OnInit {
     }
 
     this.error.set(readableHttpError(error, fallback));
+  }
+
+  private hasActiveTokenName(value: string): boolean {
+    const normalizedName = value.trim().toLocaleLowerCase();
+    if (!normalizedName) return false;
+
+    return this.tokens().some(
+      (token) =>
+        !token.isRevoked &&
+        (!token.expiresAt || Date.parse(token.expiresAt) > Date.now()) &&
+        token.displayName.trim().toLocaleLowerCase() === normalizedName,
+    );
   }
 }
