@@ -21,6 +21,7 @@ export interface PortfolioSummary {
   name: string;
   strategyName: string | null;
   marketValue: number;
+  cashBalance: number;
   dayChange: number;
   dayChangePercent: number;
   positionCount: number;
@@ -45,6 +46,7 @@ export interface PortfolioDetails {
   description: string | null;
   strategyName: string | null;
   marketValue: number;
+  cashBalance: number;
   totalCost: number;
   unrealizedGain: number;
   unrealizedGainPercent: number;

@@ -22,6 +22,7 @@ Returns one result set:
 | `Name`             | `nvarchar`         | no       |
 | `StrategyName`     | `nvarchar`         | yes      |
 | `MarketValue`      | `decimal`          | no       |
+| `CashBalance`      | `decimal`          | no       |
 | `DayChange`        | `decimal`          | no       |
 | `DayChangePercent` | `decimal`          | no       |
 | `PositionCount`    | `int`              | no       |
@@ -31,11 +32,15 @@ Returns one result set:
 
 Additional parameter: `@PortfolioId uniqueidentifier`.
 
-The first result set is one authorized portfolio row with `PortfolioId`, `Name`, `Description`, `StrategyName`, `MarketValue`, `TotalCost`, `UnrealizedGain`, and `UnrealizedGainPercent`.
+The first result set is one authorized portfolio row with `PortfolioId`, `Name`, `Description`, `StrategyName`, `MarketValue`, `CashBalance`, `TotalCost`, `UnrealizedGain`, and `UnrealizedGainPercent`.
+
+`CashBalance` is the account's USD `TotalAmount`. `MarketValue` is total portfolio value: USD cash plus the market value of security positions. `TotalCost`, `UnrealizedGain`, and `UnrealizedGainPercent` continue to describe security positions only, so adding cash does not manufacture an investment gain or loss.
 
 The second result set contains authorized positions with `PositionId`, `Symbol`, `Description`, `Quantity`, `AveragePrice`, `CurrentPrice`, `MarketValue`, `UnrealizedGain`, and `UnrealizedGainPercent`. `PositionId` is `nvarchar(50)` and is the normalized symbol, which is the stable position key inside one account.
 
 The procedure must return no row when the portfolio does not belong to the resolved user.
+
+Apply `investment_mcp/sql/019_add_portal_cash_valuation.sql` to an existing Trade database before deploying a portal build that expects `CashBalance`.
 
 ## `invest.Portal_GetMcpTokens`
 

@@ -22,6 +22,12 @@
       </div>
       <div class="metric-grid">
         <article class="card metric-card">
+          <span class="metric-label">Cash balance</span
+          ><strong class="metric-value">{{
+            item.cashBalance | currency: 'USD' : 'symbol' : '1.0-0'
+          }}</strong>
+        </article>
+        <article class="card metric-card">
           <span class="metric-label">Total cost</span
           ><strong class="metric-value">{{
             item.totalCost | currency: 'USD' : 'symbol' : '1.0-0'

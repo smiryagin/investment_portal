@@ -44,6 +44,7 @@ public sealed class TradePortalGateway(
                 reader.GetString(reader.GetOrdinal("Name")),
                 GetNullableString(reader, "StrategyName"),
                 reader.GetDecimal(reader.GetOrdinal("MarketValue")),
+                reader.GetDecimal(reader.GetOrdinal("CashBalance")),
                 reader.GetDecimal(reader.GetOrdinal("DayChange")),
                 reader.GetDecimal(reader.GetOrdinal("DayChangePercent")),
                 reader.GetInt32(reader.GetOrdinal("PositionCount")),
@@ -75,6 +76,7 @@ public sealed class TradePortalGateway(
         var description = GetNullableString(reader, "Description");
         var strategyName = GetNullableString(reader, "StrategyName");
         var marketValue = reader.GetDecimal(reader.GetOrdinal("MarketValue"));
+        var cashBalance = reader.GetDecimal(reader.GetOrdinal("CashBalance"));
         var totalCost = reader.GetDecimal(reader.GetOrdinal("TotalCost"));
         var unrealizedGain = reader.GetDecimal(reader.GetOrdinal("UnrealizedGain"));
         var unrealizedGainPercent = reader.GetDecimal(reader.GetOrdinal("UnrealizedGainPercent"));
@@ -103,6 +105,7 @@ public sealed class TradePortalGateway(
             description,
             strategyName,
             marketValue,
+            cashBalance,
             totalCost,
             unrealizedGain,
             unrealizedGainPercent,
