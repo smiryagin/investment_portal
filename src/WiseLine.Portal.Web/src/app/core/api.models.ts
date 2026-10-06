@@ -65,6 +65,14 @@ export interface McpTokenCreated extends McpTokenSummary {
   token: string;
 }
 
+export interface OAuthConnection {
+  id: string;
+  clientId: string;
+  displayName: string;
+  scopes: string[];
+  authorizedAt: string | null;
+}
+
 export interface ProblemDetails {
   title?: string;
   detail?: string;

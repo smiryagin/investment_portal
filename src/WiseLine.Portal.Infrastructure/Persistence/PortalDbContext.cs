@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using OpenIddict.EntityFrameworkCore.Models;
 using WiseLine.Portal.Domain.Auditing;
 using WiseLine.Portal.Domain.Email;
 using WiseLine.Portal.Domain.Integration;
@@ -37,14 +38,28 @@ public sealed class PortalDbContext(DbContextOptions<PortalDbContext> options)
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        builder.UseOpenIddict();
 
         ConfigureIdentity(builder);
+        ConfigureOAuth(builder);
         ConfigureUsers(builder);
         ConfigureSubscriptions(builder);
         ConfigureIntegration(builder);
         ConfigurePayments(builder);
         ConfigureEmail(builder);
         ConfigureAudit(builder);
+    }
+
+    private static void ConfigureOAuth(ModelBuilder builder)
+    {
+        builder.Entity<OpenIddictEntityFrameworkCoreApplication>()
+            .ToTable("Applications", "oauth");
+        builder.Entity<OpenIddictEntityFrameworkCoreAuthorization>()
+            .ToTable("Authorizations", "oauth");
+        builder.Entity<OpenIddictEntityFrameworkCoreScope>()
+            .ToTable("Scopes", "oauth");
+        builder.Entity<OpenIddictEntityFrameworkCoreToken>()
+            .ToTable("Tokens", "oauth");
     }
 
     private static void ConfigureIntegration(ModelBuilder builder)

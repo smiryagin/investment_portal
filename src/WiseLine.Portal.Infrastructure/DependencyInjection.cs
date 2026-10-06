@@ -9,6 +9,7 @@ using WiseLine.Portal.Application.Subscriptions;
 using WiseLine.Portal.Application.Trade;
 using WiseLine.Portal.Infrastructure.Email;
 using WiseLine.Portal.Infrastructure.Identity;
+using WiseLine.Portal.Infrastructure.OAuth;
 using WiseLine.Portal.Infrastructure.Payments;
 using WiseLine.Portal.Infrastructure.Persistence;
 using WiseLine.Portal.Infrastructure.Subscriptions;
@@ -35,7 +36,15 @@ public static class DependencyInjection
                 {
                     sql.EnableRetryOnFailure(3);
                     sql.MigrationsHistoryTable("__EFMigrationsHistory", "deployment");
-                }));
+                })
+                .UseOpenIddict());
+
+        services.AddOpenIddict()
+            .AddCore(options =>
+            {
+                options.UseEntityFrameworkCore()
+                    .UseDbContext<PortalDbContext>();
+            });
 
         services
             .AddIdentityCore<PortalUser>(options =>
@@ -56,6 +65,15 @@ public static class DependencyInjection
             .AddDefaultTokenProviders();
 
         services.AddSingleton(TimeProvider.System);
+        services.AddHostedService<OAuthClientSeeder>();
+        services.AddHttpClient("OAuthClientMetadata", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(10);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("WiseLinePortal/1.0");
+        }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            AllowAutoRedirect = false
+        });
         services.AddScoped<ITransactionalEmailOutbox, TransactionalEmailOutbox>();
         services.AddScoped<IEmailWebhookProcessor, ResendWebhookProcessor>();
         services.AddSingleton<IEmailWebhookSignatureVerifier, ResendWebhookSignatureVerifier>();
@@ -73,6 +91,26 @@ public static class DependencyInjection
         services.AddScoped<IPaymentWebhookProcessor, PaymentWebhookProcessor>();
         services.AddHttpClient("Stripe", client => client.Timeout = TimeSpan.FromSeconds(20));
         services.AddHttpClient("PayPal", client => client.Timeout = TimeSpan.FromSeconds(20));
+
+        services
+            .AddOptions<OAuthServerOptions>()
+            .Bind(configuration.GetSection(OAuthServerOptions.SectionName))
+            .Validate(
+                value => !value.Enabled || IsAbsoluteHttpsUrl(value.Issuer),
+                "OAuth:Issuer must be an absolute HTTPS URL when OAuth is enabled.")
+            .Validate(
+                value => !value.Enabled || IsAbsoluteHttpsUrl(value.Resource),
+                "OAuth:Resource must be an absolute HTTPS URL when OAuth is enabled.")
+            .Validate(
+                value => value.AccessTokenMinutes is >= 5 and <= 60,
+                "OAuth:AccessTokenMinutes must be between 5 and 60.")
+            .Validate(
+                value => value.RefreshTokenDays is >= 1 and <= 90,
+                "OAuth:RefreshTokenDays must be between 1 and 90.")
+            .Validate(
+                value => !value.Enabled || value.Clients.All(IsValidOAuthClient),
+                "Every OAuth client requires a client id, display name, and absolute HTTPS redirect URI.")
+            .ValidateOnStart();
 
         services
             .AddOptions<EmailOptions>()
@@ -126,4 +164,16 @@ public static class DependencyInjection
 
         return services;
     }
+
+    private static bool IsAbsoluteHttpsUrl(string value) =>
+        Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps;
+
+    private static bool IsValidOAuthClient(OAuthClientOptions client) =>
+        !string.IsNullOrWhiteSpace(client.ClientId) &&
+        !string.IsNullOrWhiteSpace(client.DisplayName) &&
+        client.RedirectUris.Count > 0 &&
+        client.RedirectUris.All(IsAbsoluteHttpsUrl) &&
+        client.TokenEndpointAuthenticationMethod is "none" or "private_key_jwt" &&
+        (client.TokenEndpointAuthenticationMethod != "private_key_jwt" ||
+            IsAbsoluteHttpsUrl(client.JsonWebKeySetUri));
 }

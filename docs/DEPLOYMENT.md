@@ -111,6 +111,10 @@ Environment variables:
 | `PAYPAL_BASE_URL`      | sandbox for staging, live for production                        |
 | `RESEND_FROM_ADDRESS`  | `WiseLine Trade <no-reply@email.wiselinetrade.com>`             |
 | `RESEND_REPLY_TO_ADDRESS` | Optional monitored support mailbox                           |
+| `OAUTH_ENABLED`         | `true` after the matching portal and MCP releases are ready     |
+| `OAUTH_ISSUER`          | `https://staging.wiselinetrade.com` for staging                 |
+| `OAUTH_RESOURCE`        | Exact environment-specific MCP URL ending in `/mcp`             |
+| `OAUTH_SIGNING_CERTIFICATE_THUMBPRINT` | LocalMachine/My signing certificate thumbprint      |
 
 Staging and production use separate databases. Never point the staging
 environment at `WiseLinePortal` or the production environment at
@@ -128,6 +132,24 @@ Environment secrets:
 - `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_PLAN_ID`, `PAYPAL_WEBHOOK_ID`
 
 Never place the deployment-owner connection in the external application configuration. The workflow exposes it only to the backup and migration steps.
+
+### OAuth signing certificate
+
+The OAuth signing certificate is separate from the public IIS TLS certificate.
+Create it once per environment from an elevated PowerShell session on the IIS
+server:
+
+```powershell
+cd C:\Services\WiseLinePortal\repository
+.\scripts\New-OAuthSigningCertificate.ps1 `
+  -AppPoolName 'WiseLinePortal-Staging' `
+  -EnvironmentName 'Staging'
+```
+
+Save the returned thumbprint as the environment variable
+`OAUTH_SIGNING_CERTIFICATE_THUMBPRINT`. The script creates a non-exportable RSA
+key in `LocalMachine\My` and grants that app-pool identity read-only access to
+the private key. Staging and production must use different certificates.
 
 ## Release and rollback behavior
 

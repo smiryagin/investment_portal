@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using WiseLine.Portal.Infrastructure;
+using WiseLine.Portal.Infrastructure.OAuth;
 using WiseLine.Portal.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,6 +40,7 @@ if (!string.IsNullOrWhiteSpace(keyRingPath))
 }
 
 builder.Services.AddPortalInfrastructure(builder.Configuration);
+builder.Services.AddPortalOAuthServer(builder.Configuration, builder.Environment);
 
 builder.Services
     .AddAuthentication(IdentityConstants.ApplicationScheme)
@@ -119,6 +121,34 @@ builder.Services.AddRateLimiter(options =>
             {
                 PermitLimit = 5,
                 Window = TimeSpan.FromMinutes(15),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            });
+    });
+    options.AddPolicy("oauth-authorization", context =>
+    {
+        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var key = userId ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            key,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            });
+    });
+    options.AddPolicy("oauth-token", context =>
+    {
+        var key = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            key,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
                 AutoReplenishment = true
             });

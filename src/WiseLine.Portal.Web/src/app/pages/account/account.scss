@@ -159,6 +159,48 @@ dd {
 .promotion-card h2 {
   font-size: 1.25rem;
 }
+.connections-card h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.connections-card > p,
+.empty-connections {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+.empty-connections {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: var(--cream);
+}
+.connection-list {
+  display: grid;
+  gap: 0;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.connection-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 0;
+  border-top: 1px solid var(--line);
+}
+.connection-list strong,
+.connection-list span,
+.connection-list small {
+  display: block;
+}
+.connection-list span,
+.connection-list small {
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
 .promotion-card > p {
   max-width: 620px;
   color: var(--muted);
@@ -181,6 +223,10 @@ dd {
     flex-direction: column;
   }
   .billing-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .connection-list li {
     align-items: stretch;
     flex-direction: column;
   }

@@ -35,6 +35,7 @@ $stripeSecret = Get-EnvironmentValue 'STRIPE_SECRET_KEY'
 $paypalClientId = Get-EnvironmentValue 'PAYPAL_CLIENT_ID'
 $resendApiKey = Get-EnvironmentValue 'RESEND_API_KEY'
 $resendFromAddress = Get-EnvironmentValue 'RESEND_FROM_ADDRESS'
+$oauthEnabled = (Get-EnvironmentValue 'OAUTH_ENABLED').Trim().ToLowerInvariant() -in @('1', 'true', 'yes', 'on')
 if ([string]::IsNullOrWhiteSpace($resendFromAddress)) {
     $resendFromAddress = 'WiseLine Trade <no-reply@email.wiselinetrade.com>'
 }
@@ -52,6 +53,15 @@ $configuration = [ordered]@{
             ClientId = Get-EnvironmentValue 'GOOGLE_CLIENT_ID'
             ClientSecret = Get-EnvironmentValue 'GOOGLE_CLIENT_SECRET'
         }
+    }
+    OAuth = [ordered]@{
+        Enabled = $oauthEnabled
+        Issuer = Get-EnvironmentValue 'OAUTH_ISSUER'
+        Resource = Get-EnvironmentValue 'OAUTH_RESOURCE'
+        SigningCertificateThumbprint = Get-EnvironmentValue 'OAUTH_SIGNING_CERTIFICATE_THUMBPRINT'
+        UseDevelopmentSigningCertificate = $false
+        AccessTokenMinutes = 10
+        RefreshTokenDays = 30
     }
     Email = [ordered]@{
         Enabled = -not [string]::IsNullOrWhiteSpace($resendApiKey)

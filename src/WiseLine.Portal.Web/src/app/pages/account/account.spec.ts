@@ -11,6 +11,8 @@ describe('AccountPage', () => {
     redeemPromotion: vi.fn(),
     createCheckout: vi.fn(),
     createBillingPortal: vi.fn(),
+    getOAuthConnections: vi.fn(),
+    revokeOAuthConnection: vi.fn(),
   };
   const auth = {
     user: signal({
@@ -36,6 +38,7 @@ describe('AccountPage', () => {
       }),
     );
     api.createBillingPortal.mockReturnValue(NEVER);
+    api.getOAuthConnections.mockReturnValue(of([]));
     api.createBillingPortal.mockClear();
 
     await TestBed.configureTestingModule({

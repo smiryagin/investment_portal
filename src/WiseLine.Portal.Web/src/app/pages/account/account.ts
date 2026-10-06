@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
-import { Subscription } from '../../core/api.models';
+import { OAuthConnection, Subscription } from '../../core/api.models';
 import { AuthService } from '../../core/auth.service';
 import { readableHttpError } from '../../core/http-error';
 import { PortalApiService } from '../../core/portal-api.service';
@@ -18,11 +18,14 @@ export class AccountPage implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   protected readonly auth = inject(AuthService);
   protected readonly subscription = signal<Subscription | null>(null);
+  protected readonly oauthConnections = signal<OAuthConnection[]>([]);
   protected readonly loading = signal(true);
   protected readonly submitting = signal(false);
   protected readonly checkoutProvider = signal<'Stripe' | 'PayPal' | null>(null);
   protected readonly openingBillingPortal = signal(false);
   protected readonly sendingConfirmation = signal(false);
+  protected readonly loadingConnections = signal(true);
+  protected readonly revokingConnectionId = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
   protected readonly promotionForm = this.formBuilder.nonNullable.group({
@@ -37,6 +40,48 @@ export class AccountPage implements OnInit {
         next: (subscription) => this.subscription.set(subscription),
         error: (error: unknown) =>
           this.error.set(readableHttpError(error, 'Subscription information is unavailable.')),
+      });
+    this.loadOAuthConnections();
+  }
+
+  protected revokeOAuthConnection(connection: OAuthConnection): void {
+    if (this.revokingConnectionId()) return;
+    if (
+      !window.confirm(
+        `Disconnect ${connection.displayName}? It will no longer be able to refresh its WiseLine access.`,
+      )
+    ) {
+      return;
+    }
+
+    this.error.set(null);
+    this.success.set(null);
+    this.revokingConnectionId.set(connection.id);
+    this.api
+      .revokeOAuthConnection(connection.id)
+      .pipe(finalize(() => this.revokingConnectionId.set(null)))
+      .subscribe({
+        next: () => {
+          this.oauthConnections.update((connections) =>
+            connections.filter((candidate) => candidate.id !== connection.id),
+          );
+          this.success.set(
+            `${connection.displayName} was disconnected. Existing access expires within 10 minutes.`,
+          );
+        },
+        error: (error: unknown) =>
+          this.error.set(readableHttpError(error, 'The AI connection could not be revoked.')),
+      });
+  }
+
+  private loadOAuthConnections(): void {
+    this.api
+      .getOAuthConnections()
+      .pipe(finalize(() => this.loadingConnections.set(false)))
+      .subscribe({
+        next: (connections) => this.oauthConnections.set(connections),
+        error: (error: unknown) =>
+          this.error.set(readableHttpError(error, 'Connected AI clients are unavailable.')),
       });
   }
 

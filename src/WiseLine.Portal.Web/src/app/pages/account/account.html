@@ -153,6 +153,42 @@
         }
       </section>
 
+      <section class="card account-card connections-card">
+        <span class="section-label">Connected AI clients</span>
+        <h2>Authorized connections</h2>
+        <p>These clients can connect to your Investment MCP account without a manual token.</p>
+        @if (loadingConnections()) {
+          <div class="loading-lines"><span></span><span></span></div>
+        } @else if (oauthConnections().length === 0) {
+          <div class="empty-connections">
+            No AI clients are connected yet. Add the WiseLine MCP URL in a supported client to
+            begin.
+          </div>
+        } @else {
+          <ul class="connection-list">
+            @for (connection of oauthConnections(); track connection.id) {
+              <li>
+                <div>
+                  <strong>{{ connection.displayName }}</strong>
+                  <span>{{ connection.scopes.join(' · ') }}</span>
+                  @if (connection.authorizedAt) {
+                    <small>Connected {{ connection.authorizedAt | date: 'medium' }}</small>
+                  }
+                </div>
+                <button
+                  class="button button-secondary button-small"
+                  type="button"
+                  (click)="revokeOAuthConnection(connection)"
+                  [disabled]="revokingConnectionId() !== null"
+                >
+                  {{ revokingConnectionId() === connection.id ? 'Disconnecting…' : 'Disconnect' }}
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
       <section class="card account-card promotion-card">
         <span class="section-label">Promotion</span>
         <h2>Have a promotion code?</h2>

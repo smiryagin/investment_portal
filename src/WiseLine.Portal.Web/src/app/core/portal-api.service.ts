@@ -5,6 +5,7 @@ import {
   CheckoutResponse,
   McpTokenCreated,
   McpTokenSummary,
+  OAuthConnection,
   PortfolioDetails,
   PortfolioSummary,
   Subscription,
@@ -48,6 +49,16 @@ export class PortalApiService {
     return this.auth
       .ensureCsrf()
       .pipe(switchMap(() => this.http.delete<void>(`/api/mcp-tokens/${id}`)));
+  }
+
+  getOAuthConnections(): Observable<OAuthConnection[]> {
+    return this.http.get<OAuthConnection[]>('/api/oauth/connections');
+  }
+
+  revokeOAuthConnection(id: string): Observable<void> {
+    return this.auth
+      .ensureCsrf()
+      .pipe(switchMap(() => this.http.delete<void>(`/api/oauth/connections/${id}`)));
   }
 
   createCheckout(provider: 'Stripe' | 'PayPal'): Observable<CheckoutResponse> {
