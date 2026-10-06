@@ -66,4 +66,5 @@ Use a deployment identity only for migrations. The running API must use separate
 - [Database identities and permissions](docs/DATABASE_SECURITY.md)
 - [Stripe and PayPal setup](docs/PAYMENTS.md)
 - [Transactional email and Resend](docs/EMAIL.md)
+- [MCP OAuth connection design](docs/MCP_OAUTH_DESIGN.md)
 - [GitHub Actions and IIS deployment](docs/DEPLOYMENT.md)
