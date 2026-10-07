@@ -13,8 +13,8 @@ export class DocsPage {
   protected readonly mcpUrl = window.location.hostname.startsWith('staging.')
     ? 'https://staging-investments-mcp.wiselinetrade.com/mcp'
     : 'https://investments-mcp.torusystems.com/mcp';
-  protected readonly codexAddCommand = `codex mcp add investments --url ${this.mcpUrl}`;
-  protected readonly codexLoginCommand = 'codex mcp login investments';
+  protected readonly codexAddCommand =
+    `codex mcp add investments --url ${this.mcpUrl} ` + '--oauth-client-id wiseline-codex-cli';
   protected readonly genericConfig = `{
   "name": "investments",
   "transport": "streamable-http",

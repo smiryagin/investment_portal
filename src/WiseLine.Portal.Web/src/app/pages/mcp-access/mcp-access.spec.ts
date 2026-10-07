@@ -38,7 +38,8 @@ describe('McpAccessPage', () => {
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('Connect without a token');
-    expect(text).toContain('codex mcp login investments');
+    expect(text).toContain('--oauth-client-id wiseline-codex-cli');
+    expect(text).toContain('opens the WiseLine approval screen automatically');
     expect(text).not.toContain('Create token');
     expect(text).not.toContain('Your access tokens');
   });

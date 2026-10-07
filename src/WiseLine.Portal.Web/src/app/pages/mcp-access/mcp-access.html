@@ -41,6 +41,7 @@
             <span>1</span>
             <div>
               <strong>Add the MCP server</strong>
+              <p>Use WiseLine's registered Codex client identity for secure OAuth sign-in.</p>
               <div class="command-row">
                 <code>{{ codexCommand }}</code>
                 <button type="button" (click)="copy(codexCommand)">
@@ -52,11 +53,8 @@
           <li>
             <span>2</span>
             <div>
-              <strong>Start secure sign-in</strong>
-              <div class="command-row">
-                <code>{{ codexLoginCommand }}</code>
-                <button type="button" (click)="copy(codexLoginCommand)">Copy</button>
-              </div>
+              <strong>Finish secure sign-in</strong>
+              <p>The add command opens the WiseLine approval screen automatically.</p>
             </div>
           </li>
           <li>

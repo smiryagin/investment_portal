@@ -24,8 +24,8 @@ export class McpAccessPage implements OnInit {
   protected readonly mcpUrl = window.location.hostname.startsWith('staging.')
     ? 'https://staging-investments-mcp.wiselinetrade.com/mcp'
     : 'https://investments-mcp.torusystems.com/mcp';
-  protected readonly codexCommand = `codex mcp add investments --url ${this.mcpUrl}`;
-  protected readonly codexLoginCommand = 'codex mcp login investments';
+  protected readonly codexCommand =
+    `codex mcp add investments --url ${this.mcpUrl} ` + '--oauth-client-id wiseline-codex-cli';
 
   ngOnInit(): void {
     this.api.getSubscription().subscribe({

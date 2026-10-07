@@ -37,6 +37,10 @@
         <article>
           <span class="step-label">Step 1</span>
           <h2>Add the remote MCP server</h2>
+          <p>
+            Use the WiseLine-registered Codex client identity so Codex can start OAuth without
+            dynamic client registration.
+          </p>
           <div class="code-block">
             <pre><code>{{ codexAddCommand }}</code></pre>
             <button type="button" (click)="copy(codexAddCommand)">
@@ -46,15 +50,11 @@
         </article>
         <article>
           <span class="step-label">Step 2</span>
-          <h2>Sign in securely</h2>
-          <p>Run the login command. Your browser opens the WiseLine approval screen.</p>
-          <div class="code-block">
-            <pre><code>{{ codexLoginCommand }}</code></pre>
-            <button type="button" (click)="copy(codexLoginCommand)">
-              {{ copied() ? 'Copied' : 'Copy' }}
-            </button>
-          </div>
-          <p>Sign in, review the permissions, and choose <strong>Allow connection</strong>.</p>
+          <h2>Finish secure sign-in</h2>
+          <p>
+            The add command opens the WiseLine approval screen automatically. Sign in, review the
+            permissions, and choose <strong>Allow connection</strong>.
+          </p>
           <a
             class="reference-link"
             href="https://developers.openai.com/codex/mcp"
