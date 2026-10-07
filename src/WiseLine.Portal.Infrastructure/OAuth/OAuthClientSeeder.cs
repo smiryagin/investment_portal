@@ -82,6 +82,7 @@ public sealed class OAuthClientSeeder(
             StringComparison.Ordinal);
         var descriptor = new OpenIddictApplicationDescriptor
         {
+            ApplicationType = client.ApplicationType,
             ClientId = client.ClientId,
             ClientType = usesPrivateKeyJwt ? ClientTypes.Confidential : ClientTypes.Public,
             ConsentType = ConsentTypes.Explicit,

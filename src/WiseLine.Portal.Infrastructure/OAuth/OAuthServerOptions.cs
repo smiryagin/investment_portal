@@ -29,6 +29,8 @@ public sealed class OAuthClientOptions
 
     public string DisplayName { get; set; } = string.Empty;
 
+    public string ApplicationType { get; set; } = "web";
+
     public List<string> RedirectUris { get; set; } = [];
 
     public string TokenEndpointAuthenticationMethod { get; set; } = "none";

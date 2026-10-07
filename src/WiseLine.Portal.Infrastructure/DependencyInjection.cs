@@ -115,7 +115,7 @@ public static class DependencyInjection
                 "OAuth signing and encryption certificate thumbprints are required when OAuth is enabled.")
             .Validate(
                 value => !value.Enabled || value.Clients.All(IsValidOAuthClient),
-                "Every OAuth client requires a client id, display name, and absolute HTTPS redirect URI.")
+                "Every OAuth client requires a client id, display name, and either an HTTPS web redirect or the native loopback redirect http://127.0.0.1/callback.")
             .ValidateOnStart();
 
         services
@@ -174,12 +174,36 @@ public static class DependencyInjection
     private static bool IsAbsoluteHttpsUrl(string value) =>
         Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps;
 
+    private static bool IsValidOAuthRedirectUri(OAuthClientOptions client, string value)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
+        {
+            return false;
+        }
+
+        if (client.ApplicationType == "web")
+        {
+            return uri.Scheme == Uri.UriSchemeHttps;
+        }
+
+        return client.ApplicationType == "native" &&
+            uri.Scheme == Uri.UriSchemeHttp &&
+            uri.Host == "127.0.0.1" &&
+            uri.IsDefaultPort &&
+            uri.AbsolutePath == "/callback" &&
+            string.IsNullOrEmpty(uri.Query) &&
+            string.IsNullOrEmpty(uri.Fragment);
+    }
+
     private static bool IsValidOAuthClient(OAuthClientOptions client) =>
         !string.IsNullOrWhiteSpace(client.ClientId) &&
         !string.IsNullOrWhiteSpace(client.DisplayName) &&
+        client.ApplicationType is "web" or "native" &&
         client.RedirectUris.Count > 0 &&
-        client.RedirectUris.All(IsAbsoluteHttpsUrl) &&
+        client.RedirectUris.All(value => IsValidOAuthRedirectUri(client, value)) &&
         client.TokenEndpointAuthenticationMethod is "none" or "private_key_jwt" &&
+        (client.ApplicationType != "native" ||
+            client.TokenEndpointAuthenticationMethod == "none") &&
         (client.TokenEndpointAuthenticationMethod != "private_key_jwt" ||
             IsAbsoluteHttpsUrl(client.JsonWebKeySetUri));
 }

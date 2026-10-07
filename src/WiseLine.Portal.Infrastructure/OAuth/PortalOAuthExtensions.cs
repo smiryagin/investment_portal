@@ -34,6 +34,8 @@ public static class PortalOAuthExtensions
                 options.AllowAuthorizationCodeFlow();
                 options.AllowRefreshTokenFlow();
                 options.RequireProofKeyForCodeExchange();
+                options.Configure(configuration =>
+                    configuration.ClientAuthenticationMethods.Add(ClientAuthenticationMethods.None));
                 options.RegisterScopes(Scopes.OfflineAccess, "investments.read", "investments.write");
                 options.RegisterResources(settings.Resource);
                 options.SetAccessTokenLifetime(TimeSpan.FromMinutes(settings.AccessTokenMinutes));

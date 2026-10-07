@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -38,16 +39,10 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
     {
         await using var oauthFactory = _factory.WithWebHostBuilder(builder =>
         {
-            builder.ConfigureAppConfiguration((_, configuration) =>
-            {
-                configuration.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["OAuth:Enabled"] = "true",
-                    ["OAuth:Issuer"] = "https://localhost",
-                    ["OAuth:Resource"] = "https://investments.example.test/mcp",
-                    ["OAuth:UseDevelopmentSigningCertificate"] = "true"
-                });
-            });
+            builder.UseSetting("OAuth:Enabled", "true");
+            builder.UseSetting("OAuth:Issuer", "https://localhost");
+            builder.UseSetting("OAuth:Resource", "https://investments.example.test/mcp");
+            builder.UseSetting("OAuth:UseDevelopmentSigningCertificate", "true");
             builder.ConfigureTestServices(services =>
             {
                 var seeder = services.Single(descriptor =>
@@ -65,6 +60,46 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
         var response = await client.GetAsync("/health/live");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task OAuthDiscovery_AdvertisesPublicClientAndPkceSupport()
+    {
+        await using var oauthFactory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("OAuth:Enabled", "true");
+            builder.UseSetting("OAuth:Issuer", "https://localhost");
+            builder.UseSetting("OAuth:Resource", "https://investments.example.test/mcp");
+            builder.UseSetting("OAuth:UseDevelopmentSigningCertificate", "true");
+            builder.ConfigureTestServices(services =>
+            {
+                var seeder = services.Single(descriptor =>
+                    descriptor.ServiceType == typeof(IHostedService) &&
+                    descriptor.ImplementationType == typeof(OAuthClientSeeder));
+                services.Remove(seeder);
+            });
+        });
+        using var client = oauthFactory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var response = await client.GetAsync("/.well-known/oauth-authorization-server");
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = document.RootElement;
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(
+            "S256",
+            root.GetProperty("code_challenge_methods_supported")
+                .EnumerateArray()
+                .Select(value => value.GetString()));
+        Assert.Contains(
+            "none",
+            root.GetProperty("token_endpoint_auth_methods_supported")
+                .EnumerateArray()
+                .Select(value => value.GetString()));
     }
 
     [Fact]
