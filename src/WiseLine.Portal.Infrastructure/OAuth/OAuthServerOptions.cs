@@ -12,6 +12,8 @@ public sealed class OAuthServerOptions
 
     public string SigningCertificateThumbprint { get; set; } = string.Empty;
 
+    public string EncryptionCertificateThumbprint { get; set; } = string.Empty;
+
     public bool UseDevelopmentSigningCertificate { get; set; }
 
     public int AccessTokenMinutes { get; set; } = 10;

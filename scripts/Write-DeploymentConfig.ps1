@@ -59,6 +59,7 @@ $configuration = [ordered]@{
         Issuer = Get-EnvironmentValue 'OAUTH_ISSUER'
         Resource = Get-EnvironmentValue 'OAUTH_RESOURCE'
         SigningCertificateThumbprint = Get-EnvironmentValue 'OAUTH_SIGNING_CERTIFICATE_THUMBPRINT'
+        EncryptionCertificateThumbprint = Get-EnvironmentValue 'OAUTH_ENCRYPTION_CERTIFICATE_THUMBPRINT'
         UseDevelopmentSigningCertificate = $false
         AccessTokenMinutes = 10
         RefreshTokenDays = 30

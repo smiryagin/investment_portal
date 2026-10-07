@@ -115,6 +115,7 @@ Environment variables:
 | `OAUTH_ISSUER`          | `https://staging.wiselinetrade.com` for staging                 |
 | `OAUTH_RESOURCE`        | Exact environment-specific MCP URL ending in `/mcp`             |
 | `OAUTH_SIGNING_CERTIFICATE_THUMBPRINT` | LocalMachine/My signing certificate thumbprint      |
+| `OAUTH_ENCRYPTION_CERTIFICATE_THUMBPRINT` | LocalMachine/My encryption certificate thumbprint |
 
 Staging and production use separate databases. Never point the staging
 environment at `WiseLinePortal` or the production environment at
@@ -133,23 +134,27 @@ Environment secrets:
 
 Never place the deployment-owner connection in the external application configuration. The workflow exposes it only to the backup and migration steps.
 
-### OAuth signing certificate
+### OAuth server certificates
 
-The OAuth signing certificate is separate from the public IIS TLS certificate.
-Create it once per environment from an elevated PowerShell session on the IIS
-server:
+The OAuth signing and encryption certificates are separate from the public IIS
+TLS certificate and from each other. Create them once per environment from an
+elevated PowerShell session on the IIS server:
 
 ```powershell
 cd C:\Services\WiseLinePortal\repository
 .\scripts\New-OAuthSigningCertificate.ps1 `
   -AppPoolName 'WiseLinePortal-Staging' `
   -EnvironmentName 'Staging'
+
+.\scripts\New-OAuthEncryptionCertificate.ps1 `
+  -AppPoolName 'WiseLinePortal-Staging' `
+  -EnvironmentName 'Staging'
 ```
 
-Save the returned thumbprint as the environment variable
-`OAUTH_SIGNING_CERTIFICATE_THUMBPRINT`. The script creates a non-exportable RSA
-key in `LocalMachine\My` and grants that app-pool identity read-only access to
-the private key. Staging and production must use different certificates.
+Save the returned thumbprints as `OAUTH_SIGNING_CERTIFICATE_THUMBPRINT` and
+`OAUTH_ENCRYPTION_CERTIFICATE_THUMBPRINT`. The scripts create non-exportable RSA
+keys in `LocalMachine\My` and grant that app-pool identity read-only access to
+the private keys. Staging and production must use different certificate pairs.
 
 ## Release and rollback behavior
 

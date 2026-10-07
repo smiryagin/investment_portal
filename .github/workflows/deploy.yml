@@ -168,6 +168,7 @@ jobs:
           OAUTH_ISSUER: ${{ vars.OAUTH_ISSUER }}
           OAUTH_RESOURCE: ${{ vars.OAUTH_RESOURCE }}
           OAUTH_SIGNING_CERTIFICATE_THUMBPRINT: ${{ vars.OAUTH_SIGNING_CERTIFICATE_THUMBPRINT }}
+          OAUTH_ENCRYPTION_CERTIFICATE_THUMBPRINT: ${{ vars.OAUTH_ENCRYPTION_CERTIFICATE_THUMBPRINT }}
         run: ./artifact/scripts/Write-DeploymentConfig.ps1 -ConfigPath '${{ vars.CONFIG_PATH }}' -AppPoolName '${{ vars.APP_POOL_NAME }}'
 
       - name: Back up production database

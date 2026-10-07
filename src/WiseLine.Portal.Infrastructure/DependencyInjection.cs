@@ -108,6 +108,12 @@ public static class DependencyInjection
                 value => value.RefreshTokenDays is >= 1 and <= 90,
                 "OAuth:RefreshTokenDays must be between 1 and 90.")
             .Validate(
+                value => !value.Enabled ||
+                    value.UseDevelopmentSigningCertificate ||
+                    (!string.IsNullOrWhiteSpace(value.SigningCertificateThumbprint) &&
+                     !string.IsNullOrWhiteSpace(value.EncryptionCertificateThumbprint)),
+                "OAuth signing and encryption certificate thumbprints are required when OAuth is enabled.")
+            .Validate(
                 value => !value.Enabled || value.Clients.All(IsValidOAuthClient),
                 "Every OAuth client requires a client id, display name, and absolute HTTPS redirect URI.")
             .ValidateOnStart();
