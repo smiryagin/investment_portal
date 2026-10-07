@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using WiseLine.Portal.Api.Models;
+using WiseLine.Portal.Api.OAuth;
 using WiseLine.Portal.Infrastructure.Identity;
 using WiseLine.Portal.Infrastructure.OAuth;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -59,7 +60,10 @@ public sealed class OAuthController(
         var displayName = await applicationManager.GetDisplayNameAsync(application, cancellationToken)
             ?? request.ClientId
             ?? "AI client";
-        return View(new OAuthAuthorizationViewModel(displayName, DescribeScopes(request.GetScopes())));
+        return View(new OAuthAuthorizationViewModel(
+            displayName,
+            DescribeScopes(request.GetScopes()),
+            OAuthAuthorizationRequestParameters.Create(request)));
     }
 
     [Authorize]

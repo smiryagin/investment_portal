@@ -42,6 +42,10 @@
     <div class="notice">WiseLine never shares your password or payment details. You can revoke this connection later.</div>
     <form method="post">
         @Html.AntiForgeryToken()
+        @foreach (var parameter in Model.RequestParameters)
+        {
+            <input type="hidden" name="@parameter.Name" value="@parameter.Value" />
+        }
         <button class="deny" type="submit" name="decision" value="deny">Cancel</button>
         <button class="allow" type="submit" name="decision" value="allow">Allow connection</button>
     </form>
