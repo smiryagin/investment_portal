@@ -63,12 +63,18 @@ public static class PortalOAuthExtensions
             var matches = store.Certificates.Find(
                 X509FindType.FindByThumbprint,
                 settings.SigningCertificateThumbprint.Replace(" ", string.Empty, StringComparison.Ordinal),
-                validOnly: true);
+                // A self-signed OAuth token-signing certificate does not need to
+                // chain to a trusted CA. Validate its dates explicitly below.
+                validOnly: false);
+            var now = DateTime.UtcNow;
             var certificate = matches
                 .OfType<X509Certificate2>()
-                .SingleOrDefault(x => x.HasPrivateKey)
+                .SingleOrDefault(x =>
+                    x.HasPrivateKey &&
+                    x.NotBefore.ToUniversalTime() <= now &&
+                    x.NotAfter.ToUniversalTime() > now)
                 ?? throw new InvalidOperationException(
-                    "The configured OAuth signing certificate was not found or has no private key.");
+                    "The configured OAuth signing certificate was not found, is outside its validity period, or has no private key.");
             options.AddSigningCertificate(certificate);
             return;
         }
