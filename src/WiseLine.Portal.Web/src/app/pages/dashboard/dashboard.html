@@ -6,7 +6,7 @@
         <h1>Hello, {{ auth.user()?.displayName }}.</h1>
         <p>Here is the current state of your WiseLine access and portfolio context.</p>
       </div>
-      <a class="button button-small" routerLink="/mcp-access">Manage MCP access</a>
+      <a class="button button-small" routerLink="/mcp-access">Manage AI connections</a>
     </div>
 
     @if (loading()) {
@@ -119,12 +119,14 @@
 
       <aside class="card next-step">
         <span class="eyebrow">Recommended next step</span>
-        <h2>Create a dedicated token for each AI client.</h2>
+        <h2>Connect your preferred AI client securely.</h2>
         <p>
-          Named tokens make activity easier to recognize and let you revoke one connection without
-          interrupting another.
+          Sign in through WiseLine OAuth. Each client gets revocable access without exposing your
+          password or copying a long-lived secret.
         </p>
-        <a class="button button-secondary button-wide" routerLink="/mcp-access">Open MCP access</a>
+        <a class="button button-secondary button-wide" routerLink="/mcp-access"
+          >Open AI connections</a
+        >
       </aside>
     </div>
   </div>

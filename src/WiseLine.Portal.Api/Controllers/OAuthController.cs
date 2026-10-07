@@ -23,6 +23,7 @@ public sealed class OAuthController(
     IOpenIddictAuthorizationManager authorizationManager,
     UserManager<PortalUser> userManager,
     IOptions<OAuthServerOptions> options,
+    TimeProvider timeProvider,
     ILogger<OAuthController> logger) : Controller
 {
     [AllowAnonymous]
@@ -113,7 +114,7 @@ public sealed class OAuthController(
         var applicationId = await applicationManager.GetIdAsync(application, cancellationToken)
             ?? throw new InvalidOperationException("The OAuth application identifier is unavailable.");
         var scopes = request.GetScopes();
-        var principal = CreatePrincipal(user, scopes);
+        var principal = CreatePrincipal(user, scopes, timeProvider.GetUtcNow());
         principal.SetResources(options.Value.Resource);
         var authorization = await FindPermanentAuthorizationAsync(
             principal.GetClaim(Claims.Subject)!,
@@ -170,7 +171,18 @@ public sealed class OAuthController(
             return OAuthForbid(Errors.InvalidGrant, "The WiseLine account is no longer available.");
         }
 
-        var principal = CreatePrincipal(user, authenticatedPrincipal.GetScopes());
+        if (!OAuthAuthorizationSession.TryGetStartedAt(authenticatedPrincipal, out var startedAt) ||
+            OAuthAuthorizationSession.IsExpired(
+                startedAt,
+                timeProvider.GetUtcNow(),
+                options.Value.RefreshTokenAbsoluteDays))
+        {
+            return OAuthForbid(
+                Errors.InvalidGrant,
+                "This AI connection has reached its maximum lifetime. Sign in again to reconnect.");
+        }
+
+        var principal = CreatePrincipal(user, authenticatedPrincipal.GetScopes(), startedAt);
         principal.SetResources(options.Value.Resource);
         principal.SetAuthorizationId(authenticatedPrincipal.GetAuthorizationId());
         logger.LogInformation(
@@ -195,7 +207,10 @@ public sealed class OAuthController(
         return null;
     }
 
-    private static ClaimsPrincipal CreatePrincipal(PortalUser user, IEnumerable<string> scopes)
+    private static ClaimsPrincipal CreatePrincipal(
+        PortalUser user,
+        IEnumerable<string> scopes,
+        DateTimeOffset authorizationStartedAt)
     {
         var identity = new ClaimsIdentity(
             TokenValidationParameters.DefaultAuthenticationType,
@@ -204,6 +219,7 @@ public sealed class OAuthController(
         identity.SetClaim(Claims.Subject, $"portal:{user.Id:D}".ToLowerInvariant());
         identity.SetClaim(Claims.JwtId, Guid.NewGuid().ToString("N"));
         identity.SetClaim(Claims.Name, user.DisplayName);
+        OAuthAuthorizationSession.SetStartedAt(identity, authorizationStartedAt);
         if (!string.IsNullOrWhiteSpace(user.Email))
         {
             identity.SetClaim(Claims.Email, user.Email);

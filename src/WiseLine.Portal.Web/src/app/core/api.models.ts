@@ -51,20 +51,6 @@ export interface PortfolioDetails {
   positions: PortfolioPosition[];
 }
 
-export interface McpTokenSummary {
-  id: string;
-  displayName: string;
-  prefix: string;
-  createdAt: string;
-  lastUsedAt: string | null;
-  expiresAt: string | null;
-  isRevoked: boolean;
-}
-
-export interface McpTokenCreated extends McpTokenSummary {
-  token: string;
-}
-
 export interface OAuthConnection {
   id: string;
   clientId: string;

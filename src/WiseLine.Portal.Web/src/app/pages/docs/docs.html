@@ -1,10 +1,10 @@
 <section class="page-header docs-header">
   <div class="shell">
     <span class="eyebrow">Connection guide</span>
-    <h1 class="page-title">Connect in a few careful steps.</h1>
+    <h1 class="page-title">Connect with your WiseLine account.</h1>
     <p class="lead">
-      Create a named token in the portal, store it in an environment variable, and let your MCP
-      client read it without placing the secret in source control.
+      Add the MCP URL in your AI client, sign in to WiseLine in the browser, and approve the
+      permissions. There is no token to create, copy, or store.
     </p>
   </div>
 </section>
@@ -16,8 +16,8 @@
       <button type="button" [class.active]="selected() === 'codex'" (click)="select('codex')">
         Codex
       </button>
-      <button type="button" [class.active]="selected() === 'claude'" (click)="select('claude')">
-        Claude Code
+      <button type="button" [class.active]="selected() === 'chatgpt'" (click)="select('chatgpt')">
+        ChatGPT
       </button>
       <button type="button" [class.active]="selected() === 'other'" (click)="select('other')">
         Other MCP client
@@ -26,43 +26,35 @@
 
     <div class="docs-content">
       <div class="security-callout">
-        <strong>Before you begin</strong>
+        <strong>OAuth keeps credentials private</strong>
         <p>
-          Never paste your access token into a repository, shared message, or screenshot. The portal
-          shows the complete token only once.
+          Your AI client receives revocable access, never your WiseLine password or payment details.
+          Disconnect a client at any time from AI connections or Account.
         </p>
       </div>
 
       @if (selected() === 'codex') {
         <article>
           <span class="step-label">Step 1</span>
-          <h2>Store the token for Codex</h2>
-          <p>
-            On Windows, open PowerShell and set the token as a User environment variable. Replace
-            the placeholder locally.
-          </p>
-          <pre><code>[Environment]::SetEnvironmentVariable(
-  'INVESTMENTS_MCP_TOKEN',
-  '&lt;paste-token-here&gt;',
-  'User'
-)</code></pre>
-          <p class="small-note">
-            Close and reopen Codex after setting the variable so the desktop process inherits it.
-          </p>
-        </article>
-        <article>
-          <span class="step-label">Step 2</span>
           <h2>Add the remote MCP server</h2>
           <div class="code-block">
-            <pre><code>{{ codexCommand }}</code></pre>
-            <button type="button" (click)="copy(codexCommand)">
+            <pre><code>{{ codexAddCommand }}</code></pre>
+            <button type="button" (click)="copy(codexAddCommand)">
               {{ copied() ? 'Copied' : 'Copy' }}
             </button>
           </div>
-          <p>
-            Run <code>codex mcp list</code>, restart Codex, then open MCP servers in Settings to
-            confirm the connection.
-          </p>
+        </article>
+        <article>
+          <span class="step-label">Step 2</span>
+          <h2>Sign in securely</h2>
+          <p>Run the login command. Your browser opens the WiseLine approval screen.</p>
+          <div class="code-block">
+            <pre><code>{{ codexLoginCommand }}</code></pre>
+            <button type="button" (click)="copy(codexLoginCommand)">
+              {{ copied() ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+          <p>Sign in, review the permissions, and choose <strong>Allow connection</strong>.</p>
           <a
             class="reference-link"
             href="https://developers.openai.com/codex/mcp"
@@ -73,55 +65,55 @@
         </article>
       }
 
-      @if (selected() === 'claude') {
+      @if (selected() === 'chatgpt') {
         <article>
           <span class="step-label">Step 1</span>
-          <h2>Store the token</h2>
-          <p>
-            Set <code>INVESTMENTS_MCP_TOKEN</code> in your operating-system environment. Do not
-            commit the token to <code>.mcp.json</code>.
-          </p>
-        </article>
-        <article>
-          <span class="step-label">Step 2</span>
-          <h2>Add a project or user MCP configuration</h2>
+          <h2>Add a custom connector</h2>
+          <p>In ChatGPT connector settings, add a custom MCP connector and use this server URL:</p>
           <div class="code-block">
-            <pre><code>{{ claudeConfig }}</code></pre>
-            <button type="button" (click)="copy(claudeConfig)">
+            <pre><code>{{ mcpUrl }}</code></pre>
+            <button type="button" (click)="copy(mcpUrl)">
               {{ copied() ? 'Copied' : 'Copy' }}
             </button>
           </div>
+        </article>
+        <article>
+          <span class="step-label">Step 2</span>
+          <h2>Approve in WiseLine</h2>
           <p>
-            Claude Code expands the environment variable when it loads the MCP configuration. Use
-            <code>/mcp</code> to inspect the connection.
+            ChatGPT opens WiseLine in your browser. Sign in and choose
+            <strong>Allow connection</strong>. The new connection then appears in your WiseLine
+            account.
           </p>
-          <a
-            class="reference-link"
-            href="https://docs.anthropic.com/en/docs/claude-code/mcp"
-            target="_blank"
-            rel="noopener"
-            >Open official Claude Code MCP documentation ↗</a
-          >
         </article>
       }
 
       @if (selected() === 'other') {
         <article>
           <span class="step-label">Connection details</span>
-          <h2>Use Streamable HTTP with bearer authentication</h2>
-          <p>Client configuration formats vary. These are the values your client needs:</p>
+          <h2>Use Streamable HTTP with OAuth</h2>
+          <p>
+            Add the server URL to a client that supports OAuth-protected remote MCP servers. The
+            client discovers WiseLine's authorization server automatically.
+          </p>
           <div class="code-block">
             <pre><code>{{ genericConfig }}</code></pre>
             <button type="button" (click)="copy(genericConfig)">
               {{ copied() ? 'Copied' : 'Copy' }}
             </button>
           </div>
-          <p>
-            If the client supports environment-variable substitution, use it instead of inserting
-            the token directly.
-          </p>
         </article>
       }
+
+      <article>
+        <span class="step-label">Reconnect policy</span>
+        <h2>Normally, sign-in is infrequent</h2>
+        <p>
+          Access tokens last 10 minutes and refresh automatically. You must sign in again after 30
+          days without use, at least once every 90 days, or immediately after you disconnect the
+          client.
+        </p>
+      </article>
 
       <article class="test-section">
         <span class="step-label">Final check</span>
@@ -131,8 +123,8 @@
           List my portfolios and briefly explain which investment tools are available.
         </blockquote>
         <p>
-          The Investment MCP service is read-oriented for market data and portfolio analysis. It
-          does not place brokerage trades.
+          The Investment MCP service provides portfolio and investment tooling. It does not place
+          brokerage trades.
         </p>
       </article>
     </div>

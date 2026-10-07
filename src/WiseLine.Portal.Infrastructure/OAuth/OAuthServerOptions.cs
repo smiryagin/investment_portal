@@ -20,6 +20,8 @@ public sealed class OAuthServerOptions
 
     public int RefreshTokenDays { get; set; } = 30;
 
+    public int RefreshTokenAbsoluteDays { get; set; } = 90;
+
     public List<OAuthClientOptions> Clients { get; set; } = [];
 }
 

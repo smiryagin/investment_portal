@@ -63,6 +63,7 @@ $configuration = [ordered]@{
         UseDevelopmentSigningCertificate = $false
         AccessTokenMinutes = 10
         RefreshTokenDays = 30
+        RefreshTokenAbsoluteDays = 90
     }
     Email = [ordered]@{
         Enabled = -not [string]::IsNullOrWhiteSpace($resendApiKey)

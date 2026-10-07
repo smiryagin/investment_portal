@@ -1,12 +1,12 @@
 # MCP OAuth connection design
 
-Status: design spike, approved for investigation only. This document does not authorize a database migration or deployment.
+Status: implemented for staging. Production deployment remains a separate operational step.
 
 ## Decision
 
 WiseLine Trade will act as the OAuth authorization server for the Investment MCP resource server. The portal will use OpenIddict 7.7.x on top of the existing ASP.NET Core Identity accounts. The Investment MCP service will remain a separate deployment and will validate portal-issued JWT access tokens using the portal's public JSON Web Key Set (JWKS).
 
-The first release will support the published Client ID Metadata Document (CIMD) identities used by the major AI hosts we explicitly approve. It will not expose unauthenticated Dynamic Client Registration (DCR). Existing `imcp_...` API tokens will remain available under an **Advanced / manual setup** section during the transition.
+The first release supports explicitly registered clients used by the AI hosts we approve. It does not expose unauthenticated Dynamic Client Registration (DCR). The public MCP endpoint is OAuth-only: the portal does not expose manual token creation or a manual-token API. Database token procedures remain available to administrators for a separately configured private compatibility endpoint.
 
 This decision keeps the current portal accounts, Google login, subscription data, and Trade identity mapping intact. It also avoids implementing OAuth itself: OpenIddict owns the authorization-code, PKCE, token, refresh-token, revocation, discovery, signing, and persistence mechanics.
 
@@ -22,7 +22,7 @@ The default connection flow becomes:
 6. The user approves access.
 7. The AI client receives and stores OAuth tokens, then retries the MCP connection automatically.
 
-The portal never displays an OAuth access token to the user. Manual API-token creation remains an advanced fallback for clients that cannot perform MCP OAuth.
+The portal never displays an OAuth access token to the user. Clients that cannot perform MCP OAuth are not supported by the public endpoint.
 
 ## System boundary
 
@@ -145,7 +145,7 @@ Initial predefined-client candidates:
 - OpenAI published identity: `https://chatgpt.com/oauth/client.json`
 - Claude published identity: import the exact URL shown by Claude's connector configuration; do not guess it
 
-Unknown CIMD clients are rejected. Older DCR-only clients can use an administrator-created static OAuth client or the advanced `imcp_...` token path.
+Unknown CIMD clients are rejected. Older DCR-only clients require an administrator-created static OAuth client. An administrator-issued `imcp_...` token may be used only against a private compatibility endpoint where manual-token authentication is explicitly enabled.
 
 If broad, zero-touch DCR becomes a product requirement, use a managed authorization service with first-class MCP support (currently Auth0 is the leading candidate) rather than writing an open registration endpoint. That would be a separate identity-migration decision.
 
@@ -155,7 +155,7 @@ No schema change is part of this spike. The implementation migration will add Op
 
 The implementation should not create a second WiseLine user table. OpenIddict principals use the existing `auth.Users` ASP.NET Identity records. Existing email/password and Google login continue unchanged.
 
-The account page will later add **Connected AI clients**, showing client name, granted scopes, first/last authorization, and a revoke action. Manual MCP tokens move under **Advanced access tokens**.
+The account and AI connections pages show connected clients, granted scopes, authorization time, and a revoke action. No manual-token controls are exposed in the portal.
 
 ## Signing keys
 
@@ -183,18 +183,18 @@ Production must not load a signing private key from source control or `appsettin
 - Audit grants, denials, refreshes, revocations, and CIMD imports without logging tokens or authorization codes.
 - Preserve the portal's antiforgery, secure-cookie, CSP, forwarded-header, and Data Protection configuration.
 
-## Rollout plan requiring separate approval
+## Rollout plan
 
 1. Create the dedicated staging MCP hostname/resource.
 2. Add OpenIddict packages and the portal OAuth migration.
 3. Add authorization, consent, token, revocation, discovery, JWKS, and certificate configuration.
 4. Add the allowlisted CIMD importer and seed the OpenAI/Claude published identities.
-5. Add JWT + legacy-token hybrid authentication to Investment MCP.
+5. Add independently configurable OAuth and manual-token authentication to Investment MCP.
 6. Add protected-resource metadata, tool-level security metadata, and the profile tool.
 7. Run metadata-contract, invalid-token, scope, audience, entitlement, refresh-rotation, and revocation tests locally.
 8. Review and apply the portal and Trade migrations explicitly.
 9. Deploy to staging only and test Codex, ChatGPT, and Claude end to end.
-10. Move manual tokens to Advanced only after OAuth succeeds across the supported clients.
+10. Disable manual-token authentication on the public MCP endpoint while leaving the private compatibility endpoint unchanged.
 
 ## Acceptance criteria
 
@@ -204,9 +204,10 @@ Production must not load a signing private key from source control or `appsettin
 - The client receives a resource-bound, short-lived token and can refresh it.
 - The MCP server rejects wrong issuer, wrong audience, missing scope, expired token, and inactive entitlement.
 - Revoking a connected client prevents refresh immediately and MCP access no later than the current access token lifetime; the Trade entitlement check may make it immediate.
-- Existing manual tokens continue to work during transition.
+- The public MCP endpoint rejects manual tokens without querying the token database.
+- The private compatibility endpoint can continue to accept administrator-issued tokens.
 - The MCP service never reads the WiseLinePortal database.
 
 ## Compatibility conclusion
 
-OpenIddict is viable for the first WiseLine release when CIMD clients are allowlisted and imported. It is not a complete answer for arbitrary DCR clients. This limitation is acceptable because ChatGPT/Codex and Claude expose published client identities, and WiseLine retains manual tokens as a fallback. A managed provider should be reconsidered before promising open, zero-touch registration for every MCP client.
+OpenIddict is viable for the first WiseLine release when clients are registered explicitly. It is not a complete answer for arbitrary DCR clients. A managed provider should be reconsidered before promising open, zero-touch registration for every MCP client.

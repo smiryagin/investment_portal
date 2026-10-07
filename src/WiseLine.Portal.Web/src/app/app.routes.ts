@@ -60,7 +60,7 @@ export const routes: Routes = [
   },
   {
     path: 'mcp-access',
-    title: 'MCP access — WiseLine Trade',
+    title: 'AI connections — WiseLine Trade',
     canActivate: [authGuard],
     loadComponent: () => import('./pages/mcp-access/mcp-access').then((m) => m.McpAccessPage),
   },

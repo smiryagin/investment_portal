@@ -156,7 +156,7 @@
       <section class="card account-card connections-card">
         <span class="section-label">Connected AI clients</span>
         <h2>Authorized connections</h2>
-        <p>These clients can connect to your Investment MCP account without a manual token.</p>
+        <p>These clients use secure OAuth access to connect to your Investment MCP account.</p>
         @if (loadingConnections()) {
           <div class="loading-lines"><span></span><span></span></div>
         } @else if (oauthConnections().length === 0) {

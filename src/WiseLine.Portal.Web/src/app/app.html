@@ -25,7 +25,9 @@
       @if (auth.isAuthenticated()) {
         <a routerLink="/dashboard" routerLinkActive="active" (click)="closeMenu()">Dashboard</a>
         <a routerLink="/portfolios" routerLinkActive="active" (click)="closeMenu()">Portfolios</a>
-        <a routerLink="/mcp-access" routerLinkActive="active" (click)="closeMenu()">MCP access</a>
+        <a routerLink="/mcp-access" routerLinkActive="active" (click)="closeMenu()"
+          >AI connections</a
+        >
         <a routerLink="/docs" routerLinkActive="active" (click)="closeMenu()">Docs</a>
         <a
           class="account-link"

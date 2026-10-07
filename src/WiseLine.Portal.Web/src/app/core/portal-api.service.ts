@@ -3,8 +3,6 @@ import { inject, Injectable } from '@angular/core';
 import { Observable, switchMap } from 'rxjs';
 import {
   CheckoutResponse,
-  McpTokenCreated,
-  McpTokenSummary,
   OAuthConnection,
   PortfolioDetails,
   PortfolioSummary,
@@ -33,22 +31,6 @@ export class PortalApiService {
 
   getPortfolio(id: string): Observable<PortfolioDetails> {
     return this.http.get<PortfolioDetails>(`/api/portfolios/${id}`);
-  }
-
-  getMcpTokens(): Observable<McpTokenSummary[]> {
-    return this.http.get<McpTokenSummary[]>('/api/mcp-tokens');
-  }
-
-  createMcpToken(displayName: string): Observable<McpTokenCreated> {
-    return this.auth
-      .ensureCsrf()
-      .pipe(switchMap(() => this.http.post<McpTokenCreated>('/api/mcp-tokens', { displayName })));
-  }
-
-  revokeMcpToken(id: string): Observable<void> {
-    return this.auth
-      .ensureCsrf()
-      .pipe(switchMap(() => this.http.delete<void>(`/api/mcp-tokens/${id}`)));
   }
 
   getOAuthConnections(): Observable<OAuthConnection[]> {

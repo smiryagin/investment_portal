@@ -30,7 +30,4 @@ public sealed record CurrentUserResponse(
 public sealed record RedeemPromotionRequest(
     [Required, MaxLength(64)] string Code);
 
-public sealed record CreateMcpTokenRequest(
-    [Required, MaxLength(100)] string DisplayName);
-
 public sealed record CheckoutResponse(string RedirectUrl, string SessionId);

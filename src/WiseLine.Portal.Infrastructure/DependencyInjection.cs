@@ -108,6 +108,12 @@ public static class DependencyInjection
                 value => value.RefreshTokenDays is >= 1 and <= 90,
                 "OAuth:RefreshTokenDays must be between 1 and 90.")
             .Validate(
+                value => value.RefreshTokenAbsoluteDays is >= 1 and <= 365,
+                "OAuth:RefreshTokenAbsoluteDays must be between 1 and 365.")
+            .Validate(
+                value => value.RefreshTokenAbsoluteDays >= value.RefreshTokenDays,
+                "OAuth:RefreshTokenAbsoluteDays must be greater than or equal to OAuth:RefreshTokenDays.")
+            .Validate(
                 value => !value.Enabled ||
                     value.UseDevelopmentSigningCertificate ||
                     (!string.IsNullOrWhiteSpace(value.SigningCertificateThumbprint) &&

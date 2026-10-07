@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 
-type Client = 'codex' | 'claude' | 'other';
+type Client = 'codex' | 'chatgpt' | 'other';
 
 @Component({
   selector: 'app-docs-page',
@@ -10,26 +10,16 @@ type Client = 'codex' | 'claude' | 'other';
 export class DocsPage {
   protected readonly selected = signal<Client>('codex');
   protected readonly copied = signal(false);
-
-  protected readonly codexCommand = `codex mcp add investments --url https://investments-mcp.torusystems.com/mcp --bearer-token-env-var INVESTMENTS_MCP_TOKEN`;
-  protected readonly claudeConfig = `{
-  "mcpServers": {
-    "investments": {
-      "type": "http",
-      "url": "https://investments-mcp.torusystems.com/mcp",
-      "headers": {
-        "Authorization": "Bearer \${INVESTMENTS_MCP_TOKEN}"
-      }
-    }
-  }
-}`;
+  protected readonly mcpUrl = window.location.hostname.startsWith('staging.')
+    ? 'https://staging-investments-mcp.wiselinetrade.com/mcp'
+    : 'https://investments-mcp.torusystems.com/mcp';
+  protected readonly codexAddCommand = `codex mcp add investments --url ${this.mcpUrl}`;
+  protected readonly codexLoginCommand = 'codex mcp login investments';
   protected readonly genericConfig = `{
   "name": "investments",
   "transport": "streamable-http",
-  "url": "https://investments-mcp.torusystems.com/mcp",
-  "headers": {
-    "Authorization": "Bearer <YOUR_MCP_TOKEN>"
-  }
+  "url": "${this.mcpUrl}",
+  "authentication": "oauth"
 }`;
 
   protected select(client: Client): void {

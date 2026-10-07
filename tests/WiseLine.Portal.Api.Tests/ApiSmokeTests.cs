@@ -141,6 +141,14 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
     }
 
     [Fact]
+    public async Task ManualMcpTokenApi_IsNotExposed()
+    {
+        var response = await _client.GetAsync("/api/mcp-tokens");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task ResendWebhook_RejectsUnsignedRequests()
     {
         using var content = new StringContent("{\"type\":\"email.delivered\"}");
