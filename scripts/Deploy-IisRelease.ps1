@@ -175,6 +175,65 @@ function Write-PortalStartupDiagnostics {
     }
 }
 
+function Write-PortalStdoutDiagnostics {
+    param(
+        [Parameter(Mandatory)] [string] $ReleasePath,
+        [Parameter(Mandatory)] [string] $PoolName,
+        [Parameter(Mandatory)] [uri] $Uri
+    )
+
+    try {
+        $webConfigPath = Join-Path $ReleasePath 'web.config'
+        $diagnosticsPath = Join-Path $ReleasePath '_diagnostics'
+        New-Item -ItemType Directory -Path $diagnosticsPath -Force | Out-Null
+
+        & icacls.exe $diagnosticsPath /grant:r "IIS AppPool\${PoolName}:(OI)(CI)M" | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Could not grant the app pool access to '$diagnosticsPath'."
+        }
+
+        [xml] $webConfig = Get-Content -LiteralPath $webConfigPath -Raw
+        $aspNetCore = $webConfig.SelectSingleNode('//aspNetCore')
+        if ($null -eq $aspNetCore) {
+            throw 'The deployed web.config does not contain an aspNetCore element.'
+        }
+
+        $aspNetCore.SetAttribute('stdoutLogEnabled', 'true')
+        $aspNetCore.SetAttribute('stdoutLogFile', '.\_diagnostics\stdout')
+        $webConfig.Save($webConfigPath)
+
+        Write-Warning 'Restarting the failed release once with bounded ANCM stdout capture enabled.'
+        $poolState = (Get-WebAppPoolState -Name $PoolName).Value
+        if ($poolState -eq 'Started') {
+            Restart-WebAppPool -Name $PoolName
+        }
+        else {
+            Start-WebAppPool -Name $PoolName
+        }
+
+        [void] (Test-PortalHealth -Uri $Uri)
+        Start-Sleep -Seconds 1
+
+        $stdoutLog = Get-ChildItem -LiteralPath $diagnosticsPath -Filter 'stdout*.log' -File `
+            -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+        if ($null -eq $stdoutLog) {
+            Write-Warning 'ANCM stdout capture did not produce a log file.'
+            return
+        }
+
+        $content = (Get-Content -LiteralPath $stdoutLog.FullName -Raw).Trim()
+        if ($content.Length -gt 12000) {
+            $content = $content.Substring($content.Length - 12000)
+        }
+        Write-Warning "Captured ANCM stdout from the failed release:`n$content"
+    }
+    catch {
+        Write-Warning "Could not capture ANCM stdout diagnostics: $($_.Exception.Message)"
+    }
+}
+
 try {
     if ($offlineFile) {
         Set-Content -LiteralPath $offlineFile -Value '<html><body><h1>WiseLine Trade is being updated.</h1></body></html>' -Encoding UTF8
@@ -189,6 +248,10 @@ try {
 
     if (-not (Test-PortalHealth -Uri $HealthUrl)) {
         Write-PortalStartupDiagnostics -ReleasePath $target
+        Write-PortalStdoutDiagnostics `
+            -ReleasePath $target `
+            -PoolName $AppPoolName `
+            -Uri $HealthUrl
         throw "Health check failed for release $ReleaseId."
     }
 

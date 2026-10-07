@@ -2,16 +2,22 @@ using System.Net;
 using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using WiseLine.Portal.Infrastructure.OAuth;
 
 namespace WiseLine.Portal.Api.Tests;
 
 public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
 {
+    private readonly PortalApiFactory _factory;
     private readonly HttpClient _client;
 
     public ApiSmokeTests(PortalApiFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false,
@@ -23,6 +29,40 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
     public async Task LiveHealthCheck_DoesNotRequireDatabaseConnectivity()
     {
         var response = await _client.GetAsync("/health/live");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task LiveHealthCheck_WorksWhenOAuthServerIsEnabled()
+    {
+        await using var oauthFactory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureAppConfiguration((_, configuration) =>
+            {
+                configuration.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["OAuth:Enabled"] = "true",
+                    ["OAuth:Issuer"] = "https://localhost",
+                    ["OAuth:Resource"] = "https://investments.example.test/mcp",
+                    ["OAuth:UseDevelopmentSigningCertificate"] = "true"
+                });
+            });
+            builder.ConfigureTestServices(services =>
+            {
+                var seeder = services.Single(descriptor =>
+                    descriptor.ServiceType == typeof(IHostedService) &&
+                    descriptor.ImplementationType == typeof(OAuthClientSeeder));
+                services.Remove(seeder);
+            });
+        });
+        using var client = oauthFactory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var response = await client.GetAsync("/health/live");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
