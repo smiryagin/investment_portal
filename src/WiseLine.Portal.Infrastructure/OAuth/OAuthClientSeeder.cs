@@ -116,7 +116,13 @@ public sealed class OAuthClientSeeder(
             descriptor.RedirectUris.Add(new Uri(redirectUri, UriKind.Absolute));
         }
 
-        descriptor.Permissions.UnionWith(
+        descriptor.Permissions.UnionWith(CreatePermissions(options.Value.Resource));
+        descriptor.Requirements.Add(Requirements.Features.ProofKeyForCodeExchange);
+
+        return descriptor;
+    }
+
+    internal static string[] CreatePermissions(string resource) =>
         [
             Permissions.Endpoints.Authorization,
             Permissions.Endpoints.Token,
@@ -125,10 +131,7 @@ public sealed class OAuthClientSeeder(
             Permissions.GrantTypes.RefreshToken,
             Permissions.ResponseTypes.Code,
             Permissions.Prefixes.Scope + "investments.read",
-            Permissions.Prefixes.Scope + "investments.write"
-        ]);
-        descriptor.Requirements.Add(Requirements.Features.ProofKeyForCodeExchange);
-
-        return descriptor;
-    }
+            Permissions.Prefixes.Scope + "investments.write",
+            Permissions.Prefixes.Resource + resource
+        ];
 }
