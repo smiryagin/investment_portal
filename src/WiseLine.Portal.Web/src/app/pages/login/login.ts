@@ -1,9 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { readableHttpError } from '../../core/http-error';
+import { PostLoginNavigationService } from '../../core/post-login-navigation.service';
 
 @Component({
   selector: 'app-login-page',
@@ -13,8 +14,8 @@ import { readableHttpError } from '../../core/http-error';
 })
 export class LoginPage {
   private readonly formBuilder = inject(FormBuilder);
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly postLoginNavigation = inject(PostLoginNavigationService);
   protected readonly auth = inject(AuthService);
 
   protected readonly submitting = signal(false);
@@ -44,8 +45,7 @@ export class LoginPage {
       .pipe(finalize(() => this.submitting.set(false)))
       .subscribe({
         next: () => {
-          const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/dashboard';
-          void this.router.navigateByUrl(returnUrl.startsWith('/') ? returnUrl : '/dashboard');
+          this.postLoginNavigation.navigate(this.route.snapshot.queryParamMap.get('returnUrl'));
         },
         error: (error: unknown) =>
           this.error.set(readableHttpError(error, 'Login failed. Please try again.')),
