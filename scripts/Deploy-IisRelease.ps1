@@ -103,16 +103,16 @@ function Test-PortalHealth {
         $savedErrorActionPreference = $ErrorActionPreference
         try {
             # curl uses a non-zero exit code for transient HTTP failures such as
-            # the 503 IIS returns while the application pool is warming up.
-            # Capture that result so the retry loop can decide when to fail.
+            # connection failures. Keep the HTTP response body and status code
+            # so an IIS/ANCM startup error is visible in the deployment log.
             $ErrorActionPreference = 'Continue'
             $curlOutput = & $curlCommand `
-                --fail `
                 --silent `
                 --show-error `
                 --max-time 15 `
                 --noproxy '*' `
                 --resolve $resolve `
+                --write-out "`n__WISELINE_HTTP_STATUS__:%{http_code}" `
                 $Uri.AbsoluteUri 2>&1
             $curlExitCode = $LASTEXITCODE
         }
@@ -120,22 +120,59 @@ function Test-PortalHealth {
             $ErrorActionPreference = $savedErrorActionPreference
         }
 
-        if ($curlExitCode -eq 0) {
+        $details = (($curlOutput | Out-String).Trim())
+        $statusMatch = [regex]::Match($details, '(?m)^__WISELINE_HTTP_STATUS__:(\d{3})$')
+        $statusCode = if ($statusMatch.Success) { [int] $statusMatch.Groups[1].Value } else { 0 }
+        $details = [regex]::Replace(
+            $details,
+            '(?m)^__WISELINE_HTTP_STATUS__:\d{3}$',
+            '').Trim()
+
+        if ($curlExitCode -eq 0 -and $statusCode -eq 200) {
             return $true
         }
 
-        $details = (($curlOutput | Out-String).Trim())
         if ($details.Length -gt 500) {
             $details = $details.Substring(0, 500)
         }
         Write-Warning (
-            "Local IIS health attempt {0}/6 failed (curl exit {1}): {2}" -f `
-                $attempt, $curlExitCode, $details)
+            "Local IIS health attempt {0}/6 failed (HTTP {1}, curl exit {2}): {3}" -f `
+                $attempt, $statusCode, $curlExitCode, $details)
 
         if ($attempt -eq 6) { return $false }
         Start-Sleep -Seconds 2
     }
     return $false
+}
+
+function Write-PortalStartupDiagnostics {
+    param([Parameter(Mandatory)] [string] $ReleasePath)
+
+    Write-Warning 'Recent IIS/ASP.NET Core startup diagnostics follow.'
+    $events = Get-WinEvent `
+        -FilterHashtable @{ LogName = 'Application'; StartTime = (Get-Date).AddMinutes(-10) } `
+        -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.ProviderName -match 'AspNetCore|\.NET Runtime|Application Error' -and
+            ($_.Message -match 'WiseLine\.Portal|aspnetcore|500\.3|startup|certificate|OpenIddict' -or
+             $_.Message -like "*$ReleasePath*")
+        } |
+        Select-Object -First 10
+
+    if (-not $events) {
+        Write-Warning 'No matching Application event-log entries were found.'
+        return
+    }
+
+    foreach ($event in $events) {
+        $message = ([string] $event.Message).Trim()
+        if ($message.Length -gt 2000) {
+            $message = $message.Substring(0, 2000)
+        }
+        Write-Warning (
+            "[{0:u}] {1} event {2}: {3}" -f `
+                $event.TimeCreated, $event.ProviderName, $event.Id, $message)
+    }
 }
 
 try {
@@ -151,6 +188,7 @@ try {
     if ($poolState -eq 'Started') { Restart-WebAppPool -Name $AppPoolName } else { Start-WebAppPool -Name $AppPoolName }
 
     if (-not (Test-PortalHealth -Uri $HealthUrl)) {
+        Write-PortalStartupDiagnostics -ReleasePath $target
         throw "Health check failed for release $ReleaseId."
     }
 
