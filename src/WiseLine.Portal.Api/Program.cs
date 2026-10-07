@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using WiseLine.Portal.Api.Security;
 using WiseLine.Portal.Infrastructure;
 using WiseLine.Portal.Infrastructure.OAuth;
 using WiseLine.Portal.Infrastructure.Persistence;
@@ -173,6 +174,7 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+var contentSecurityPolicy = PortalContentSecurityPolicy.Create(builder.Configuration);
 
 if (!app.Environment.IsDevelopment())
 {
@@ -184,11 +186,7 @@ app.Use(async (context, next) =>
 {
     context.Response.Headers.XContentTypeOptions = "nosniff";
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-    context.Response.Headers.ContentSecurityPolicy =
-        "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; " +
-        "style-src 'self' 'unsafe-inline'; " +
-        "img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; " +
-        "base-uri 'self'; frame-ancestors 'none'; form-action 'self' https://accounts.google.com";
+    context.Response.Headers.ContentSecurityPolicy = contentSecurityPolicy;
     context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
     await next();
 });

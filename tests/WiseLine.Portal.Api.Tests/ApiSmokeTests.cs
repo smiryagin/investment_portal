@@ -122,6 +122,14 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
             "https://static.cloudflareinsights.com",
             response.Headers.GetValues("Content-Security-Policy").Single(),
             StringComparison.Ordinal);
+        Assert.Contains(
+            "https://chatgpt.com",
+            response.Headers.GetValues("Content-Security-Policy").Single(),
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "http://127.0.0.1:*",
+            response.Headers.GetValues("Content-Security-Policy").Single(),
+            StringComparison.Ordinal);
     }
 
     [Fact]
