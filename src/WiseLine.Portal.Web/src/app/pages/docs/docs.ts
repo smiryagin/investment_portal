@@ -10,6 +10,9 @@ type Client = 'codex' | 'chatgpt' | 'other';
 export class DocsPage {
   protected readonly selected = signal<Client>('codex');
   protected readonly copied = signal(false);
+  protected readonly chatGptConnectionName = 'WiseLine Trade Investments';
+  protected readonly chatGptConnectionDescription =
+    'Secure portfolio, investment research, and planning tools from WiseLine Trade.';
   protected readonly mcpUrl = window.location.hostname.startsWith('staging.')
     ? 'https://staging-investments-mcp.wiselinetrade.com/mcp'
     : 'https://investments-mcp.torusystems.com/mcp';

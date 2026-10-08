@@ -68,8 +68,26 @@
       @if (selected() === 'chatgpt') {
         <article>
           <span class="step-label">Step 1</span>
-          <h2>Add a custom connector</h2>
-          <p>In ChatGPT connector settings, add a custom MCP connector and use this server URL:</p>
+          <h2>Open the custom MCP form</h2>
+          <p>
+            In ChatGPT on the web, open <strong>Plugins</strong>, select the
+            <strong>plus (+) button</strong>, and then choose
+            <strong>Add custom MCP server</strong>.
+          </p>
+        </article>
+        <article>
+          <span class="step-label">Step 2</span>
+          <h2>Enter the WiseLine details</h2>
+          <p>
+            Use <strong>{{ chatGptConnectionName }}</strong> as the name and enter this description:
+          </p>
+          <div class="code-block">
+            <pre><code>{{ chatGptConnectionDescription }}</code></pre>
+            <button type="button" (click)="copy(chatGptConnectionDescription)">
+              {{ copied() ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+          <p>Under <strong>Connection</strong>, choose <strong>Server URL</strong> and paste:</p>
           <div class="code-block">
             <pre><code>{{ mcpUrl }}</code></pre>
             <button type="button" (click)="copy(mcpUrl)">
@@ -78,13 +96,39 @@
           </div>
         </article>
         <article>
-          <span class="step-label">Step 2</span>
+          <span class="step-label">Step 3</span>
+          <h2>Choose OAuth authentication</h2>
+          <p>
+            Select <strong>OAuth</strong>. If ChatGPT asks for a registration method, choose
+            <strong>Client Identifier Metadata Document (CIMD)</strong>. Accept the custom-server
+            risk notice, then choose <strong>Create as a plugin</strong>.
+          </p>
+        </article>
+        <article>
+          <span class="step-label">Step 4</span>
           <h2>Approve in WiseLine</h2>
           <p>
             ChatGPT opens WiseLine in your browser. Sign in and choose
             <strong>Allow connection</strong>. The new connection then appears in your WiseLine
             account.
           </p>
+        </article>
+        <article>
+          <span class="step-label">Step 5</span>
+          <h2>Install and use the plugin</h2>
+          <p>
+            Open the new plugin, install it if ChatGPT shows an install button, and start a new
+            chat. Type <strong>@</strong> in the prompt box and select
+            <strong>{{ chatGptConnectionName }}</strong
+            >.
+          </p>
+          <a
+            class="reference-link"
+            href="https://developers.openai.com/api/docs/guides/custom-mcp-server"
+            target="_blank"
+            rel="noopener"
+            >Open official ChatGPT custom MCP documentation ↗</a
+          >
         </article>
       }
 
