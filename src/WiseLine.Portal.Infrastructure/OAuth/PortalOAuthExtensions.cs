@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenIddict.Server;
 using OpenIddict.Server.AspNetCore;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
@@ -41,6 +42,16 @@ public static class PortalOAuthExtensions
                 options.SetAccessTokenLifetime(TimeSpan.FromMinutes(settings.AccessTokenMinutes));
                 options.SetRefreshTokenLifetime(TimeSpan.FromDays(settings.RefreshTokenDays));
                 options.DisableAccessTokenEncryption();
+
+                if (settings.ClientIdMetadataDocumentSupported)
+                {
+                    options.AddEventHandler<OpenIddictServerEvents.HandleConfigurationRequestContext>(builder =>
+                        builder.UseInlineHandler(context =>
+                        {
+                            context.Metadata["client_id_metadata_document_supported"] = true;
+                            return default;
+                        }));
+                }
 
                 AddServerCertificates(options, settings, environment);
 

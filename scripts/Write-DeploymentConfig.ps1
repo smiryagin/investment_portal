@@ -64,6 +64,7 @@ $configuration = [ordered]@{
         AccessTokenMinutes = 10
         RefreshTokenDays = 30
         RefreshTokenAbsoluteDays = 90
+        ClientIdMetadataDocumentSupported = $true
     }
     Email = [ordered]@{
         Enabled = -not [string]::IsNullOrWhiteSpace($resendApiKey)

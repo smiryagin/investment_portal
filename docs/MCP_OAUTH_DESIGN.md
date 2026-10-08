@@ -79,7 +79,7 @@ The metadata must advertise at least:
 - `code_challenge_methods_supported: ["S256"]`
 - `token_endpoint_auth_methods_supported` including `none` for public AI clients
 - `authorization_response_iss_parameter_supported: true`
-- `client_id_metadata_document_supported: true` only if WiseLine later implements runtime CIMD retrieval and validation
+- `client_id_metadata_document_supported: true` because WiseLine validates and pre-registers an explicit allowlist of CIMD client identities
 - `scopes_supported` containing the WiseLine scopes and `offline_access`
 
 Every successful and error authorization response must include an exact `iss` value. The `resource` parameter must be accepted at authorization and token endpoints, retained with the authorization code, and represented by the access-token `aud` claim.
@@ -126,10 +126,11 @@ The MCP server must check the current Trade entitlement on every authenticated r
 OpenIddict 7.7.x supports the required authorization code, PKCE, refresh-token, discovery/JWKS, issuer-identification, and resource-indicator features. It does not currently implement RFC 7591 DCR. It also does not automatically resolve arbitrary CIMD URL client identifiers.
 
 For the first release, a deployment-time importer will pre-register a small set
-of published client identities. This is the **predefined client** compatibility
-path; importing a document does not by itself make WiseLine a general CIMD
-authorization server, so discovery must not advertise
-`client_id_metadata_document_supported: true` in this phase.
+of published client identities. This is an allowlisted CIMD compatibility path
+rather than open registration. Discovery advertises
+`client_id_metadata_document_supported: true`, but only explicitly configured
+and successfully imported CIMD client identifiers are accepted. Unknown client
+metadata URLs are rejected as unregistered clients.
 
 The importer will:
 

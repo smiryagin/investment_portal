@@ -22,6 +22,8 @@ public sealed class OAuthServerOptions
 
     public int RefreshTokenAbsoluteDays { get; set; } = 90;
 
+    public bool ClientIdMetadataDocumentSupported { get; set; }
+
     public List<OAuthClientOptions> Clients { get; set; } = [];
 }
 

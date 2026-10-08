@@ -71,6 +71,7 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
             builder.UseSetting("OAuth:Issuer", "https://localhost");
             builder.UseSetting("OAuth:Resource", "https://investments.example.test/mcp");
             builder.UseSetting("OAuth:UseDevelopmentSigningCertificate", "true");
+            builder.UseSetting("OAuth:ClientIdMetadataDocumentSupported", "true");
             builder.ConfigureTestServices(services =>
             {
                 var seeder = services.Single(descriptor =>
@@ -100,6 +101,7 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
             root.GetProperty("token_endpoint_auth_methods_supported")
                 .EnumerateArray()
                 .Select(value => value.GetString()));
+        Assert.True(root.GetProperty("client_id_metadata_document_supported").GetBoolean());
     }
 
     [Fact]
