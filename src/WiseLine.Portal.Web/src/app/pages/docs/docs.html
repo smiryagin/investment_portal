@@ -1,10 +1,10 @@
 <section class="page-header docs-header">
   <div class="shell">
     <span class="eyebrow">Connection guide</span>
-    <h1 class="page-title">Connect with your WiseLine account.</h1>
+    <h1 class="page-title">Connect WiseLine to your AI app.</h1>
     <p class="lead">
-      Add the MCP URL in your AI client, sign in to WiseLine in the browser, and approve the
-      permissions. There is no token to create, copy, or store.
+      Choose the app you normally use. When an in-app connection is available, we show it first.
+      Command-line and configuration instructions are clearly marked as advanced or one-time setup.
     </p>
   </div>
 </section>
@@ -13,23 +13,29 @@
   <div class="shell docs-layout">
     <aside class="docs-sidebar">
       <span>Choose your client</span>
-      <button type="button" [class.active]="selected() === 'codex'" (click)="select('codex')">
-        Codex
-      </button>
       <button type="button" [class.active]="selected() === 'chatgpt'" (click)="select('chatgpt')">
-        ChatGPT
+        <strong>ChatGPT</strong>
+        <small>No terminal required</small>
       </button>
       <button type="button" [class.active]="selected() === 'claude'" (click)="select('claude')">
-        Claude Code
+        <strong>Claude</strong>
+        <small>No terminal required</small>
+      </button>
+      <button type="button" [class.active]="selected() === 'codex'" (click)="select('codex')">
+        <strong>Codex Desktop</strong>
+        <small>One-time terminal setup</small>
       </button>
       <button type="button" [class.active]="selected() === 'gemini'" (click)="select('gemini')">
-        Gemini CLI
+        <strong>Gemini CLI</strong>
+        <small>Configuration required</small>
       </button>
       <button type="button" [class.active]="selected() === 'opencode'" (click)="select('opencode')">
-        OpenCode
+        <strong>OpenCode</strong>
+        <small>One-time configuration</small>
       </button>
       <button type="button" [class.active]="selected() === 'other'" (click)="select('other')">
-        Other MCP client
+        <strong>Other MCP client</strong>
+        <small>Use client instructions</small>
       </button>
     </aside>
 
@@ -42,46 +48,26 @@
         </p>
       </div>
 
-      @if (selected() === 'codex') {
-        <article>
-          <span class="step-label">Step 1</span>
-          <h2>Add the remote MCP server</h2>
-          <p>
-            Use the WiseLine-registered Codex client identity so Codex can start OAuth without
-            dynamic client registration.
-          </p>
-          <div class="code-block">
-            <pre><code>{{ codexAddCommand }}</code></pre>
-            <button type="button" (click)="copy(codexAddCommand)">
-              {{ copied() ? 'Copied' : 'Copy' }}
-            </button>
-          </div>
-        </article>
-        <article>
-          <span class="step-label">Step 2</span>
-          <h2>Finish secure sign-in</h2>
-          <p>
-            The add command opens the WiseLine approval screen automatically. Sign in, review the
-            permissions, and choose <strong>Allow connection</strong>.
-          </p>
-          <a
-            class="reference-link"
-            href="https://developers.openai.com/codex/mcp"
-            target="_blank"
-            rel="noopener"
-            >Open official Codex MCP documentation ↗</a
-          >
-        </article>
-      }
-
       @if (selected() === 'chatgpt') {
+        <div class="setup-summary">
+          <span class="method-badge method-badge-easy">Recommended · No terminal required</span>
+          <h2>Connect from ChatGPT Plugins</h2>
+          <p>
+            Complete the setup in ChatGPT's graphical interface. You do not need to create a
+            WiseLine token or run a command.
+          </p>
+        </div>
         <article>
           <span class="step-label">Step 1</span>
           <h2>Open the custom MCP form</h2>
           <p>
-            In ChatGPT on the web, open <strong>Plugins</strong>, select the
-            <strong>plus (+) button</strong>, and then choose
-            <strong>Add custom MCP server</strong>.
+            In ChatGPT, open <strong>Plugins</strong> from the sidebar, select the
+            <strong>plus (+) button</strong>, and choose <strong>Add custom MCP server</strong>.
+          </p>
+          <p class="small-note">
+            If your desktop app does not show the creation form, open ChatGPT on the web with the
+            same account and workspace. After setup, select the WiseLine plugin in your normal
+            ChatGPT experience.
           </p>
         </article>
         <article>
@@ -142,45 +128,112 @@
       }
 
       @if (selected() === 'claude') {
+        <div class="setup-summary">
+          <span class="method-badge method-badge-easy">Recommended · No terminal required</span>
+          <h2>Connect from Claude</h2>
+          <p>Add WiseLine as a remote custom connector from Claude's graphical settings.</p>
+        </div>
         <article>
           <span class="step-label">Step 1</span>
-          <h2>Add WiseLine to Claude Code</h2>
+          <h2>Open Claude connectors</h2>
           <p>
-            Run this command in a terminal. It uses WiseLine's public Claude Code client and a fixed
-            local callback port; no client secret is required.
+            In Claude, open <strong>Customize</strong>, choose <strong>Connectors</strong>, select
+            <strong>+ Add</strong>, and then choose <strong>Add custom connector</strong>.
           </p>
+        </article>
+        <article>
+          <span class="step-label">Step 2</span>
+          <h2>Enter the WiseLine server URL</h2>
+          <p>Name the connector <strong>WiseLine Trade Investments</strong> and paste this URL:</p>
           <div class="code-block">
-            <pre><code>{{ claudeAddCommand }}</code></pre>
-            <button type="button" (click)="copy(claudeAddCommand)">
+            <pre><code>{{ mcpUrl }}</code></pre>
+            <button type="button" (click)="copy(mcpUrl)">
+              {{ copied() ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+        </article>
+        <article>
+          <span class="step-label">Step 3</span>
+          <h2>Approve the connection</h2>
+          <p>
+            Continue with OAuth, sign in to WiseLine, review the permissions, and choose
+            <strong>Allow connection</strong>. If you use a managed Claude workspace, an owner may
+            need to make the connector available first.
+          </p>
+          <a
+            class="reference-link"
+            href="https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp"
+            target="_blank"
+            rel="noopener"
+            >Open official Claude connector documentation ↗</a
+          >
+        </article>
+        <details class="advanced-setup">
+          <summary>Advanced: connect from Claude Code</summary>
+          <div class="advanced-content">
+            <p>Use these commands if you work in Claude Code instead of the Claude app:</p>
+            <div class="code-block">
+              <pre><code>{{ claudeAddCommand }}
+{{ claudeLoginCommand }}</code></pre>
+              <button type="button" (click)="copy(claudeAddCommand + '\n' + claudeLoginCommand)">
+                {{ copied() ? 'Copied' : 'Copy' }}
+              </button>
+            </div>
+            <p>
+              Complete the browser approval, then run <code>claude mcp list</code> to verify the
+              connection.
+            </p>
+          </div>
+        </details>
+      }
+
+      @if (selected() === 'codex') {
+        <div class="setup-summary">
+          <span class="method-badge">One-time terminal setup</span>
+          <h2>Connect once, then work in Codex Desktop</h2>
+          <p>
+            Codex Desktop and Codex CLI share the same MCP configuration on this computer. Run the
+            setup once, then use WiseLine normally from the desktop app.
+          </p>
+        </div>
+        <article>
+          <span class="step-label">Step 1</span>
+          <h2>Add WiseLine and start OAuth</h2>
+          <p>Open PowerShell or another terminal and run:</p>
+          <div class="code-block">
+            <pre><code>{{ codexSetupCommands }}</code></pre>
+            <button type="button" (click)="copy(codexSetupCommands)">
               {{ copied() ? 'Copied' : 'Copy' }}
             </button>
           </div>
         </article>
         <article>
           <span class="step-label">Step 2</span>
-          <h2>Sign in with WiseLine</h2>
-          <p>Start the OAuth flow from your terminal:</p>
-          <div class="code-block">
-            <pre><code>{{ claudeLoginCommand }}</code></pre>
-            <button type="button" (click)="copy(claudeLoginCommand)">
-              {{ copied() ? 'Copied' : 'Copy' }}
-            </button>
-          </div>
+          <h2>Finish secure sign-in</h2>
           <p>
-            Sign in in the browser and choose <strong>Allow connection</strong>. Run
-            <code>claude mcp list</code> to verify that <code>investments</code> is connected.
+            Sign in to WiseLine in the browser, review the permissions, and choose
+            <strong>Allow connection</strong>. Return to Codex Desktop and start a new chat if the
+            connection is not visible in the current one.
           </p>
           <a
             class="reference-link"
-            href="https://code.claude.com/docs/en/mcp"
+            href="https://developers.openai.com/codex/mcp"
             target="_blank"
             rel="noopener"
-            >Open official Claude Code MCP documentation ↗</a
+            >Open official Codex MCP documentation ↗</a
           >
         </article>
       }
 
       @if (selected() === 'gemini') {
+        <div class="setup-summary">
+          <span class="method-badge">Configuration required</span>
+          <h2>Connect from Gemini CLI</h2>
+          <p>
+            Gemini currently documents custom remote MCP setup through Gemini CLI and its settings
+            file. This is a one-time configuration.
+          </p>
+        </div>
         <article>
           <span class="step-label">Step 1</span>
           <h2>Add WiseLine to Gemini CLI</h2>
@@ -214,6 +267,14 @@
       }
 
       @if (selected() === 'opencode') {
+        <div class="setup-summary">
+          <span class="method-badge">One-time configuration</span>
+          <h2>Connect OpenCode Desktop</h2>
+          <p>
+            OpenCode Desktop uses the same <code>opencode.json</code> configuration as the terminal
+            client. Add WiseLine once, then continue working in the desktop app.
+          </p>
+        </div>
         <article>
           <span class="step-label">Step 1</span>
           <h2>Add WiseLine to OpenCode</h2>
@@ -253,6 +314,15 @@
       }
 
       @if (selected() === 'other') {
+        <div class="setup-summary">
+          <span class="method-badge">Client-specific setup</span>
+          <h2>Use your client's connection settings</h2>
+          <p>
+            Look for <strong>Plugins</strong>, <strong>Connectors</strong>, or
+            <strong>MCP servers</strong> first. If the client has no graphical form, use its
+            documented configuration method with the details below.
+          </p>
+        </div>
         <article>
           <span class="step-label">Connection details</span>
           <h2>Use Streamable HTTP with OAuth</h2>

@@ -8,7 +8,7 @@ type Client = 'codex' | 'chatgpt' | 'claude' | 'gemini' | 'opencode' | 'other';
   styleUrl: './docs.scss',
 })
 export class DocsPage {
-  protected readonly selected = signal<Client>('codex');
+  protected readonly selected = signal<Client>('chatgpt');
   protected readonly copied = signal(false);
   protected readonly chatGptConnectionName = 'WiseLine Trade Investments';
   protected readonly chatGptConnectionDescription =
@@ -16,8 +16,10 @@ export class DocsPage {
   protected readonly mcpUrl = window.location.hostname.startsWith('staging.')
     ? 'https://staging-investments-mcp.wiselinetrade.com/mcp'
     : 'https://investments-mcp.torusystems.com/mcp';
-  protected readonly codexAddCommand =
-    `codex mcp add investments --url ${this.mcpUrl} ` + '--oauth-client-id wiseline-codex-cli';
+  protected readonly codexSetupCommands =
+    `codex mcp add investments --url ${this.mcpUrl} ` +
+    '--oauth-client-id wiseline-codex-cli\n' +
+    'codex mcp login investments';
   protected readonly claudeAddCommand =
     'claude mcp add --transport http --scope user ' +
     '--client-id wiseline-claude-code --callback-port 47632 ' +
