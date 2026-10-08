@@ -36,7 +36,20 @@ public static class PortalOAuthExtensions
                 options.AllowRefreshTokenFlow();
                 options.RequireProofKeyForCodeExchange();
                 options.Configure(configuration =>
-                    configuration.ClientAuthenticationMethods.Add(ClientAuthenticationMethods.None));
+                {
+                    // WiseLine's approved MCP clients use authorization code +
+                    // PKCE and don't carry a client secret. ChatGPT also
+                    // supports private_key_jwt, but advertising it makes the
+                    // client prefer that method over the proven PKCE-only
+                    // exchange. Keep the token endpoint's advertised methods
+                    // aligned with the allowlisted public clients.
+                    configuration.ClientAuthenticationMethods.Remove(
+                        ClientAuthenticationMethods.PrivateKeyJwt);
+                    configuration.ClientAssertionTypes.Remove(
+                        ClientAssertionTypes.JwtBearer);
+                    configuration.ClientAuthenticationMethods.Add(
+                        ClientAuthenticationMethods.None);
+                });
                 options.RegisterScopes(Scopes.OfflineAccess, "investments.read", "investments.write");
                 options.RegisterResources(settings.Resource);
                 options.SetAccessTokenLifetime(TimeSpan.FromMinutes(settings.AccessTokenMinutes));

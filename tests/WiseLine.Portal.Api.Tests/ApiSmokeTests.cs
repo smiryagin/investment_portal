@@ -31,7 +31,9 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
     {
         var response = await _client.GetAsync("/health/live");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(
+            response.StatusCode == HttpStatusCode.OK,
+            $"Expected 200 OK, received {(int) response.StatusCode}: {await response.Content.ReadAsStringAsync()}");
     }
 
     [Fact]
@@ -59,7 +61,9 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
 
         var response = await client.GetAsync("/health/live");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(
+            response.StatusCode == HttpStatusCode.OK,
+            $"Expected 200 OK, received {(int) response.StatusCode}: {await response.Content.ReadAsStringAsync()}");
     }
 
     [Fact]
@@ -98,6 +102,11 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
                 .Select(value => value.GetString()));
         Assert.Contains(
             "none",
+            root.GetProperty("token_endpoint_auth_methods_supported")
+                .EnumerateArray()
+                .Select(value => value.GetString()));
+        Assert.DoesNotContain(
+            "private_key_jwt",
             root.GetProperty("token_endpoint_auth_methods_supported")
                 .EnumerateArray()
                 .Select(value => value.GetString()));
