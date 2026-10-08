@@ -13,7 +13,8 @@ public sealed class PortalContentSecurityPolicyTests
             {
                 ["OAuth:Clients:0:RedirectUris:0"] =
                     "https://chatgpt.com/connector_platform_oauth_redirect",
-                ["OAuth:Clients:1:RedirectUris:0"] = "http://127.0.0.1/callback"
+                ["OAuth:Clients:1:RedirectUris:0"] = "http://127.0.0.1/callback",
+                ["OAuth:Clients:2:RedirectUris:0"] = "http://localhost:47632/callback"
             })
             .Build();
 
@@ -21,6 +22,7 @@ public sealed class PortalContentSecurityPolicyTests
 
         Assert.Contains("https://chatgpt.com", policy, StringComparison.Ordinal);
         Assert.Contains("http://127.0.0.1:*", policy, StringComparison.Ordinal);
+        Assert.Contains("http://localhost:*", policy, StringComparison.Ordinal);
     }
 
     [Fact]

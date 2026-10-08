@@ -19,6 +19,15 @@
       <button type="button" [class.active]="selected() === 'chatgpt'" (click)="select('chatgpt')">
         ChatGPT
       </button>
+      <button type="button" [class.active]="selected() === 'claude'" (click)="select('claude')">
+        Claude Code
+      </button>
+      <button type="button" [class.active]="selected() === 'gemini'" (click)="select('gemini')">
+        Gemini CLI
+      </button>
+      <button type="button" [class.active]="selected() === 'opencode'" (click)="select('opencode')">
+        OpenCode
+      </button>
       <button type="button" [class.active]="selected() === 'other'" (click)="select('other')">
         Other MCP client
       </button>
@@ -128,6 +137,117 @@
             target="_blank"
             rel="noopener"
             >Open official ChatGPT custom MCP documentation ↗</a
+          >
+        </article>
+      }
+
+      @if (selected() === 'claude') {
+        <article>
+          <span class="step-label">Step 1</span>
+          <h2>Add WiseLine to Claude Code</h2>
+          <p>
+            Run this command in a terminal. It uses WiseLine's public Claude Code client and a fixed
+            local callback port; no client secret is required.
+          </p>
+          <div class="code-block">
+            <pre><code>{{ claudeAddCommand }}</code></pre>
+            <button type="button" (click)="copy(claudeAddCommand)">
+              {{ copied() ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+        </article>
+        <article>
+          <span class="step-label">Step 2</span>
+          <h2>Sign in with WiseLine</h2>
+          <p>Start the OAuth flow from your terminal:</p>
+          <div class="code-block">
+            <pre><code>{{ claudeLoginCommand }}</code></pre>
+            <button type="button" (click)="copy(claudeLoginCommand)">
+              {{ copied() ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+          <p>
+            Sign in in the browser and choose <strong>Allow connection</strong>. Run
+            <code>claude mcp list</code> to verify that <code>investments</code> is connected.
+          </p>
+          <a
+            class="reference-link"
+            href="https://code.claude.com/docs/en/mcp"
+            target="_blank"
+            rel="noopener"
+            >Open official Claude Code MCP documentation ↗</a
+          >
+        </article>
+      }
+
+      @if (selected() === 'gemini') {
+        <article>
+          <span class="step-label">Step 1</span>
+          <h2>Add WiseLine to Gemini CLI</h2>
+          <p>
+            Open <code>~/.gemini/settings.json</code> and merge in this
+            <code>mcpServers</code> entry. Keep any unrelated settings already in the file.
+          </p>
+          <div class="code-block">
+            <pre><code>{{ geminiConfig }}</code></pre>
+            <button type="button" (click)="copy(geminiConfig)">
+              {{ copied() ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+        </article>
+        <article>
+          <span class="step-label">Step 2</span>
+          <h2>Authorize from Gemini CLI</h2>
+          <p>
+            Start Gemini CLI, run <code>/mcp auth investments</code>, then sign in to WiseLine and
+            choose <strong>Allow connection</strong>. Run <code>/mcp list</code> to verify the
+            connection.
+          </p>
+          <a
+            class="reference-link"
+            href="https://geminicli.com/docs/tools/mcp-server/"
+            target="_blank"
+            rel="noopener"
+            >Open official Gemini CLI MCP documentation ↗</a
+          >
+        </article>
+      }
+
+      @if (selected() === 'opencode') {
+        <article>
+          <span class="step-label">Step 1</span>
+          <h2>Add WiseLine to OpenCode</h2>
+          <p>
+            Open <code>~/.config/opencode/opencode.json</code> and merge in this
+            <code>mcp</code> entry. Keep any unrelated settings already in the file.
+          </p>
+          <div class="code-block">
+            <pre><code>{{ opencodeConfig }}</code></pre>
+            <button type="button" (click)="copy(opencodeConfig)">
+              {{ copied() ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+        </article>
+        <article>
+          <span class="step-label">Step 2</span>
+          <h2>Sign in from OpenCode</h2>
+          <p>Run the OAuth command in a terminal:</p>
+          <div class="code-block">
+            <pre><code>{{ opencodeLoginCommand }}</code></pre>
+            <button type="button" (click)="copy(opencodeLoginCommand)">
+              {{ copied() ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+          <p>
+            Sign in in the browser and choose <strong>Allow connection</strong>. Run
+            <code>opencode mcp list</code> to verify that <code>investments</code> is connected.
+          </p>
+          <a
+            class="reference-link"
+            href="https://docs.opencode.ai/docs/mcp-servers/"
+            target="_blank"
+            rel="noopener"
+            >Open official OpenCode MCP documentation ↗</a
           >
         </article>
       }

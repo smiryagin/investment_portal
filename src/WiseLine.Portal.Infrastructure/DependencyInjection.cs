@@ -121,7 +121,7 @@ public static class DependencyInjection
                 "OAuth signing and encryption certificate thumbprints are required when OAuth is enabled.")
             .Validate(
                 value => !value.Enabled || value.Clients.All(IsValidOAuthClient),
-                "Every OAuth client requires a client id, display name, and either an HTTPS web redirect or the native loopback redirect http://127.0.0.1/callback.")
+                "Every OAuth client requires a client id, display name, and either an HTTPS web redirect or an HTTP native loopback redirect without a query or fragment.")
             .ValidateOnStart();
 
         services
@@ -194,9 +194,8 @@ public static class DependencyInjection
 
         return client.ApplicationType == "native" &&
             uri.Scheme == Uri.UriSchemeHttp &&
-            uri.Host == "127.0.0.1" &&
-            uri.IsDefaultPort &&
-            uri.AbsolutePath == "/callback" &&
+            uri.IsLoopback &&
+            uri.AbsolutePath.StartsWith("/", StringComparison.Ordinal) &&
             string.IsNullOrEmpty(uri.Query) &&
             string.IsNullOrEmpty(uri.Fragment);
     }

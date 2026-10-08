@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 
-type Client = 'codex' | 'chatgpt' | 'other';
+type Client = 'codex' | 'chatgpt' | 'claude' | 'gemini' | 'opencode' | 'other';
 
 @Component({
   selector: 'app-docs-page',
@@ -18,6 +18,43 @@ export class DocsPage {
     : 'https://investments-mcp.torusystems.com/mcp';
   protected readonly codexAddCommand =
     `codex mcp add investments --url ${this.mcpUrl} ` + '--oauth-client-id wiseline-codex-cli';
+  protected readonly claudeAddCommand =
+    'claude mcp add --transport http --scope user ' +
+    '--client-id wiseline-claude-code --callback-port 47632 ' +
+    `investments ${this.mcpUrl}`;
+  protected readonly claudeLoginCommand = 'claude mcp login investments';
+  protected readonly geminiConfig = `{
+  "mcpServers": {
+    "investments": {
+      "httpUrl": "${this.mcpUrl}",
+      "oauth": {
+        "enabled": true,
+        "clientId": "wiseline-gemini-cli",
+        "scopes": [
+          "openid",
+          "offline_access",
+          "investments.read",
+          "investments.write"
+        ],
+        "redirectUri": "http://localhost:47633/oauth/callback"
+      }
+    }
+  }
+}`;
+  protected readonly opencodeConfig = `{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "investments": {
+      "type": "remote",
+      "url": "${this.mcpUrl}",
+      "oauth": {
+        "clientId": "wiseline-opencode",
+        "scope": "openid offline_access investments.read investments.write"
+      }
+    }
+  }
+}`;
+  protected readonly opencodeLoginCommand = 'opencode mcp auth investments';
   protected readonly genericConfig = `{
   "name": "investments",
   "transport": "streamable-http",
