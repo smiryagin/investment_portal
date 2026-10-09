@@ -191,31 +191,37 @@
 
       @if (selected() === 'codex') {
         <div class="setup-summary">
-          <span class="method-badge">One-time terminal setup</span>
-          <h2>Connect once, then work in Codex Desktop</h2>
-          <p>
-            Codex Desktop and Codex CLI share the same MCP configuration on this computer. Run the
-            setup once, then use WiseLine normally from the desktop app.
-          </p>
+          <span class="method-badge method-badge-easy">Recommended · No terminal required</span>
+          <h2>Connect from Codex Desktop</h2>
+          <p>Add WiseLine from Codex Desktop's graphical MCP settings.</p>
         </div>
         <article>
           <span class="step-label">Step 1</span>
-          <h2>Add WiseLine and start OAuth</h2>
-          <p>Open PowerShell or another terminal and run:</p>
+          <h2>Open MCP settings</h2>
+          <p>
+            In Codex Desktop, open <strong>Settings</strong>, choose <strong>Plugins</strong>,
+            select the <strong>MCPs</strong> tab, and choose <strong>Add MCP server</strong> from
+            the <strong>Add</strong> menu.
+          </p>
+        </article>
+        <article>
+          <span class="step-label">Step 2</span>
+          <h2>Enter the WiseLine server URL</h2>
+          <p>Name it <strong>WiseLine Trade Investments</strong> and paste this URL:</p>
           <div class="code-block">
-            <pre><code>{{ codexSetupCommands }}</code></pre>
-            <button type="button" (click)="copy(codexSetupCommands)">
+            <pre><code>{{ mcpUrl }}</code></pre>
+            <button type="button" (click)="copy(mcpUrl)">
               {{ copied() ? 'Copied' : 'Copy' }}
             </button>
           </div>
         </article>
         <article>
-          <span class="step-label">Step 2</span>
+          <span class="step-label">Step 3</span>
           <h2>Finish secure sign-in</h2>
           <p>
-            Sign in to WiseLine in the browser, review the permissions, and choose
-            <strong>Allow connection</strong>. Return to Codex Desktop and start a new chat if the
-            connection is not visible in the current one.
+            Choose <strong>Authenticate</strong>, sign in to WiseLine in the browser, review the
+            permissions, and choose <strong>Allow connection</strong>. Return to Codex Desktop and
+            start a new chat if the connection is not visible in the current one.
           </p>
           <a
             class="reference-link"
@@ -225,6 +231,19 @@
             >Open official Codex MCP documentation ↗</a
           >
         </article>
+        <details class="advanced-setup">
+          <summary>Advanced: connect from Codex CLI</summary>
+          <div class="advanced-content">
+            <p>Use these commands if you prefer terminal setup:</p>
+            <div class="code-block">
+              <pre><code>{{ codexSetupCommands }}</code></pre>
+              <button type="button" (click)="copy(codexSetupCommands)">
+                {{ copied() ? 'Copied' : 'Copy' }}
+              </button>
+            </div>
+            <p>Codex Desktop and Codex CLI share this MCP configuration on the same computer.</p>
+          </div>
+        </details>
       }
 
       @if (selected() === 'gemini') {

@@ -40,7 +40,12 @@ describe('DocsPage', () => {
 
     clickClient(element, 'Codex Desktop');
     fixture.detectChanges();
-    expect(element.textContent).toContain('share the same MCP configuration');
+    expect(element.textContent).toContain('Recommended · No terminal required');
+    expect(element.textContent).toContain('Settings');
+    expect(element.textContent).toContain('MCPs');
+    expect(element.textContent).toContain('Authenticate');
+    expect(element.textContent).toContain('share this MCP configuration');
+    expect(element.textContent).toContain('Advanced: connect from Codex CLI');
     expect(element.textContent).toContain('codex mcp login investments');
 
     clickClient(element, 'Gemini CLI');

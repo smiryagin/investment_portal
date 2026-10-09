@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using WiseLine.Portal.Infrastructure.OAuth;
 
 namespace WiseLine.Portal.Api.Tests;
@@ -111,6 +112,21 @@ public sealed class ApiSmokeTests : IClassFixture<PortalApiFactory>
                 .EnumerateArray()
                 .Select(value => value.GetString()));
         Assert.True(root.GetProperty("client_id_metadata_document_supported").GetBoolean());
+    }
+
+    [Fact]
+    public void OAuthClients_RegisterCodexDesktopPublishedIdentity()
+    {
+        var options = _factory.Services.GetRequiredService<IOptions<OAuthServerOptions>>().Value;
+        var client = Assert.Single(
+            options.Clients,
+            candidate => candidate.ClientId == "https://chatgpt.com/oauth/codex/client.json");
+
+        Assert.Equal("Codex Desktop", client.DisplayName);
+        Assert.Equal("native", client.ApplicationType);
+        Assert.Equal("none", client.TokenEndpointAuthenticationMethod);
+        Assert.Contains("http://127.0.0.1/callback", client.RedirectUris);
+        Assert.Contains("http://localhost/callback", client.RedirectUris);
     }
 
     [Fact]
