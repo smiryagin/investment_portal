@@ -144,7 +144,8 @@ The importer will:
 Initial predefined-client candidates:
 
 - OpenAI published identity: `https://chatgpt.com/oauth/client.json`
-- Claude published identity: import the exact URL shown by Claude's connector configuration; do not guess it
+- Claude published identity: `https://claude.ai/oauth/mcp-oauth-client-metadata`
+  with redirect URI `https://claude.ai/api/mcp/auth_callback`
 
 Unknown CIMD clients are rejected. Older DCR-only clients require an administrator-created static OAuth client. An administrator-issued `imcp_...` token may be used only against a private compatibility endpoint where manual-token authentication is explicitly enabled.
 

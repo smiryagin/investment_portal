@@ -13,14 +13,17 @@ public sealed class PortalContentSecurityPolicyTests
             {
                 ["OAuth:Clients:0:RedirectUris:0"] =
                     "https://chatgpt.com/connector_platform_oauth_redirect",
-                ["OAuth:Clients:1:RedirectUris:0"] = "http://127.0.0.1/callback",
-                ["OAuth:Clients:2:RedirectUris:0"] = "http://localhost:47632/callback"
+                ["OAuth:Clients:1:RedirectUris:0"] =
+                    "https://claude.ai/api/mcp/auth_callback",
+                ["OAuth:Clients:2:RedirectUris:0"] = "http://127.0.0.1/callback",
+                ["OAuth:Clients:3:RedirectUris:0"] = "http://localhost:47632/callback"
             })
             .Build();
 
         var policy = PortalContentSecurityPolicy.Create(configuration);
 
         Assert.Contains("https://chatgpt.com", policy, StringComparison.Ordinal);
+        Assert.Contains("https://claude.ai", policy, StringComparison.Ordinal);
         Assert.Contains("http://127.0.0.1:*", policy, StringComparison.Ordinal);
         Assert.Contains("http://localhost:*", policy, StringComparison.Ordinal);
     }

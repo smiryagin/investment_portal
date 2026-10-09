@@ -27,6 +27,7 @@ describe('DocsPage', () => {
     fixture.detectChanges();
     expect(element.textContent).toContain('Customize');
     expect(element.textContent).toContain('Add custom connector');
+    expect(element.textContent).toContain("Use Claude's published identity (Recommended)");
     expect(element.textContent).toContain('Advanced: connect from Claude Code');
     expect(element.textContent).toContain('--client-id wiseline-claude-code');
     expect(element.textContent).toContain('claude mcp login investments');
