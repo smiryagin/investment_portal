@@ -146,6 +146,9 @@ Initial predefined-client candidates:
 - OpenAI published identity: `https://chatgpt.com/oauth/client.json`
 - Claude published identity: `https://claude.ai/oauth/mcp-oauth-client-metadata`
   with redirect URI `https://claude.ai/api/mcp/auth_callback`
+- OpenCode published identity: `https://opencode.ai/oauth/opencode/client.json`
+  with native loopback redirects `http://127.0.0.1/callback` and
+  `http://localhost/callback`
 
 Unknown CIMD clients are rejected. Older DCR-only clients require an administrator-created static OAuth client. An administrator-issued `imcp_...` token may be used only against a private compatibility endpoint where manual-token authentication is explicitly enabled.
 

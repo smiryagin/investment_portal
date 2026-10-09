@@ -48,11 +48,7 @@ export class DocsPage {
   "mcp": {
     "investments": {
       "type": "remote",
-      "url": "${this.mcpUrl}",
-      "oauth": {
-        "clientId": "wiseline-opencode",
-        "scope": "openid offline_access investments.read investments.write"
-      }
+      "url": "${this.mcpUrl}"
     }
   }
 }`;

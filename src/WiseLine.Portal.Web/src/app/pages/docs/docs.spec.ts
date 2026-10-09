@@ -50,7 +50,8 @@ describe('DocsPage', () => {
 
     clickClient(element, 'OpenCode');
     fixture.detectChanges();
-    expect(element.textContent).toContain('wiseline-opencode');
+    expect(element.textContent).toContain('automatically uses its published OAuth identity');
+    expect(element.textContent).not.toContain('wiseline-opencode');
     expect(element.textContent).toContain('opencode mcp auth investments');
   });
 });
