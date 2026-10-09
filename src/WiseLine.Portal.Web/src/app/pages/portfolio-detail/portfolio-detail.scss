@@ -42,6 +42,72 @@
   overflow: hidden;
   margin-top: 1rem;
 }
+.strategy-panel {
+  overflow: hidden;
+  margin-top: 1rem;
+}
+.strategy-list {
+  display: grid;
+  gap: 1rem;
+  padding: 1.3rem;
+}
+.strategy-card {
+  padding: 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--cream);
+}
+.strategy-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  align-items: start;
+}
+.strategy-heading h3 {
+  margin: 0.25rem 0 0;
+  font-size: 1.1rem;
+}
+.strategy-heading small,
+.strategy-type {
+  color: var(--green-700);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.strategy-rules {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin: 1rem 0 0;
+}
+.strategy-rules > div {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+.strategy-rules dt {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+.strategy-rules dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+.strategy-empty {
+  padding: 1.5rem 1.3rem;
+}
+.strategy-empty h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+}
+.strategy-empty p,
+.strategy-note {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
 .panel-title {
   display: flex;
   justify-content: space-between;
@@ -74,5 +140,12 @@
   }
   .headline-value {
     text-align: left;
+  }
+  .strategy-heading {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .strategy-rules {
+    grid-template-columns: 1fr;
   }
 }

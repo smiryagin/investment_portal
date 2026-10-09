@@ -1,4 +1,5 @@
 using System.Data;
+using System.Text.Json;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -61,39 +62,79 @@ public sealed class TradePortalGateway(
         var tradeUserId = await SynchronizeAndResolveTradeUserIdAsync(portalUserId, cancellationToken);
         await using var connection = CreateConnection();
         await connection.OpenAsync(cancellationToken);
-        await using var command = CreateCommand(connection, _options.GetPortfolioProcedure, tradeUserId);
-        command.Parameters.Add(new SqlParameter("@PortfolioId", SqlDbType.UniqueIdentifier) { Value = portfolioId });
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-
-        if (!await reader.ReadAsync(cancellationToken))
-        {
-            return null;
-        }
-
-        var id = reader.GetGuid(reader.GetOrdinal("PortfolioId"));
-        var name = reader.GetString(reader.GetOrdinal("Name"));
-        var description = GetNullableString(reader, "Description");
-        var strategyName = GetNullableString(reader, "StrategyName");
-        var marketValue = reader.GetDecimal(reader.GetOrdinal("MarketValue"));
-        var totalCost = reader.GetDecimal(reader.GetOrdinal("TotalCost"));
-        var unrealizedGain = reader.GetDecimal(reader.GetOrdinal("UnrealizedGain"));
-        var unrealizedGainPercent = reader.GetDecimal(reader.GetOrdinal("UnrealizedGainPercent"));
+        Guid id;
+        string name;
+        string? description;
+        string? strategyName;
+        decimal marketValue;
+        decimal totalCost;
+        decimal unrealizedGain;
+        decimal unrealizedGainPercent;
         var positions = new List<PortfolioPosition>();
 
-        if (await reader.NextResultAsync(cancellationToken))
+        await using (var command = CreateCommand(connection, _options.GetPortfolioProcedure, tradeUserId))
         {
-            while (await reader.ReadAsync(cancellationToken))
+            command.Parameters.Add(new SqlParameter("@PortfolioId", SqlDbType.UniqueIdentifier) { Value = portfolioId });
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+            if (!await reader.ReadAsync(cancellationToken))
             {
-                positions.Add(new PortfolioPosition(
-                    reader.GetString(reader.GetOrdinal("PositionId")),
-                    reader.GetString(reader.GetOrdinal("Symbol")),
-                    GetNullableString(reader, "Description"),
-                    reader.GetDecimal(reader.GetOrdinal("Quantity")),
-                    GetNullableDecimal(reader, "AveragePrice"),
-                    GetNullableDecimal(reader, "CurrentPrice"),
-                    reader.GetDecimal(reader.GetOrdinal("MarketValue")),
-                    reader.GetDecimal(reader.GetOrdinal("UnrealizedGain")),
-                    reader.GetDecimal(reader.GetOrdinal("UnrealizedGainPercent"))));
+                return null;
+            }
+
+            id = reader.GetGuid(reader.GetOrdinal("PortfolioId"));
+            name = reader.GetString(reader.GetOrdinal("Name"));
+            description = GetNullableString(reader, "Description");
+            strategyName = GetNullableString(reader, "StrategyName");
+            marketValue = reader.GetDecimal(reader.GetOrdinal("MarketValue"));
+            totalCost = reader.GetDecimal(reader.GetOrdinal("TotalCost"));
+            unrealizedGain = reader.GetDecimal(reader.GetOrdinal("UnrealizedGain"));
+            unrealizedGainPercent = reader.GetDecimal(reader.GetOrdinal("UnrealizedGainPercent"));
+
+            if (await reader.NextResultAsync(cancellationToken))
+            {
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    positions.Add(new PortfolioPosition(
+                        reader.GetString(reader.GetOrdinal("PositionId")),
+                        reader.GetString(reader.GetOrdinal("Symbol")),
+                        GetNullableString(reader, "Description"),
+                        reader.GetDecimal(reader.GetOrdinal("Quantity")),
+                        GetNullableDecimal(reader, "AveragePrice"),
+                        GetNullableDecimal(reader, "CurrentPrice"),
+                        reader.GetDecimal(reader.GetOrdinal("MarketValue")),
+                        reader.GetDecimal(reader.GetOrdinal("UnrealizedGain")),
+                        reader.GetDecimal(reader.GetOrdinal("UnrealizedGainPercent"))));
+                }
+            }
+        }
+
+        var strategies = new List<PortfolioStrategy>();
+        await using (var command = CreateCommand(
+            connection,
+            _options.GetPortfolioStrategiesProcedure,
+            tradeUserId))
+        {
+            command.Parameters.Add(new SqlParameter("@PortfolioId", SqlDbType.UniqueIdentifier) { Value = portfolioId });
+            try
+            {
+                await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    strategies.Add(new PortfolioStrategy(
+                        reader.GetGuid(reader.GetOrdinal("StrategyRuleId")),
+                        GetNullableGuid(reader, "AccountId"),
+                        reader.GetString(reader.GetOrdinal("StrategyName")),
+                        reader.GetString(reader.GetOrdinal("StrategyType")),
+                        ParseJson(reader, "RuleJson"),
+                        reader.GetString(reader.GetOrdinal("StrategyScope")),
+                        GetNullableDateTimeOffset(reader, "UpdatedAt")));
+                }
+            }
+            catch (SqlException exception) when (exception.Number == 2812)
+            {
+                // Keep portfolio reads compatible while the additive Trade DB
+                // strategy procedure is being rolled out to an environment.
             }
         }
 
@@ -106,7 +147,8 @@ public sealed class TradePortalGateway(
             totalCost,
             unrealizedGain,
             unrealizedGainPercent,
-            positions);
+            positions,
+            strategies);
     }
 
     public async Task<IReadOnlyList<McpTokenSummary>> GetMcpTokensAsync(
@@ -308,6 +350,18 @@ public sealed class TradePortalGateway(
     {
         var ordinal = reader.GetOrdinal(name);
         return reader.IsDBNull(ordinal) ? null : reader.GetDecimal(ordinal);
+    }
+
+    private static Guid? GetNullableGuid(SqlDataReader reader, string name)
+    {
+        var ordinal = reader.GetOrdinal(name);
+        return reader.IsDBNull(ordinal) ? null : reader.GetGuid(ordinal);
+    }
+
+    private static JsonElement ParseJson(SqlDataReader reader, string name)
+    {
+        using var document = JsonDocument.Parse(reader.GetString(reader.GetOrdinal(name)));
+        return document.RootElement.Clone();
     }
 
     private static DateTimeOffset? GetNullableDateTimeOffset(SqlDataReader reader, string name)

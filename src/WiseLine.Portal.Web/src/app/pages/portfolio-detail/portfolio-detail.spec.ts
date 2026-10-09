@@ -48,4 +48,55 @@ describe('PortfolioDetailPage', () => {
 
     expect(api.getPortfolio).not.toHaveBeenCalled();
   });
+
+  it('shows portfolio-specific and global strategy details', () => {
+    route.snapshot.paramMap.get.mockReturnValue('56fe6ab6-cfbd-f111-8101-0022482049e4');
+    api.getPortfolio.mockReturnValue(
+      of({
+        id: '56fe6ab6-cfbd-f111-8101-0022482049e4',
+        name: 'Retirement',
+        description: 'Long-term account',
+        strategyName: 'Long-term growth',
+        marketValue: 100000,
+        totalCost: 80000,
+        unrealizedGain: 20000,
+        unrealizedGainPercent: 25,
+        positions: [],
+        strategies: [
+          {
+            id: '11111111-1111-1111-1111-111111111111',
+            accountId: '56fe6ab6-cfbd-f111-8101-0022482049e4',
+            name: 'Long-term growth',
+            type: 'allocation',
+            rule: { targetEquityPercent: 70, rebalanceAnnually: true },
+            scope: 'portfolio',
+            updatedAt: '2026-10-09T12:00:00Z',
+          },
+          {
+            id: '22222222-2222-2222-2222-222222222222',
+            accountId: null,
+            name: 'Avoid leverage',
+            type: 'constraint',
+            rule: { allowMargin: false },
+            scope: 'global',
+            updatedAt: '2026-10-09T12:00:00Z',
+          },
+        ],
+      }),
+    );
+
+    const fixture = TestBed.createComponent(PortfolioDetailPage);
+    fixture.detectChanges();
+    const content = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(content).toContain('Portfolio strategy');
+    expect(content).toContain('Long-term growth');
+    expect(content).toContain('Target Equity Percent');
+    expect(content).toContain('70');
+    expect(content).toContain('Portfolio-specific');
+    expect(content).toContain('Avoid leverage');
+    expect(content).toContain('Applies to all portfolios');
+    expect(content).toContain('Allow Margin');
+    expect(content).toContain('No');
+  });
 });

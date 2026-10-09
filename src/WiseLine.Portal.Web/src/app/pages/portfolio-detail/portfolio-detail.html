@@ -46,6 +46,56 @@
           >
         </article>
       </div>
+      <section class="card strategy-panel">
+        <div class="panel-title">
+          <div>
+            <span>Investment plan</span>
+            <h2>Portfolio strategy</h2>
+          </div>
+          <small>{{ item.strategies.length }} active</small>
+        </div>
+        @if (item.strategies.length === 0) {
+          <div class="strategy-empty">
+            <h3>No strategy defined</h3>
+            <p>
+              Use your connected AI to document this portfolio's objective, time horizon, risk
+              tolerance, target allocation, and constraints. Decisions remain yours.
+            </p>
+          </div>
+        } @else {
+          <div class="strategy-list">
+            @for (strategy of item.strategies; track strategy.id) {
+              <article class="strategy-card">
+                <div class="strategy-heading">
+                  <div>
+                    <span class="strategy-type">{{ strategy.type }}</span>
+                    <h3>{{ strategy.name }}</h3>
+                  </div>
+                  <small>
+                    {{
+                      strategy.scope === 'portfolio'
+                        ? 'Portfolio-specific'
+                        : 'Applies to all portfolios'
+                    }}
+                  </small>
+                </div>
+                @if (strategyEntries(strategy.rule).length === 0) {
+                  <p class="strategy-note">No additional rule details were provided.</p>
+                } @else {
+                  <dl class="strategy-rules">
+                    @for (entry of strategyEntries(strategy.rule); track entry.label) {
+                      <div>
+                        <dt>{{ entry.label }}</dt>
+                        <dd>{{ entry.value }}</dd>
+                      </div>
+                    }
+                  </dl>
+                }
+              </article>
+            }
+          </div>
+        }
+      </section>
       <section class="card positions-panel">
         <div class="panel-title">
           <div>

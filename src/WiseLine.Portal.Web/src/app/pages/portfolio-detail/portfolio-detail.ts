@@ -19,6 +19,22 @@ export class PortfolioDetailPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
 
+  protected strategyEntries(rule: unknown): Array<{ label: string; value: string }> {
+    if (rule === null || rule === undefined) {
+      return [];
+    }
+    if (typeof rule !== 'object' || Array.isArray(rule)) {
+      return [{ label: 'Rule', value: this.formatStrategyValue(rule) }];
+    }
+    return Object.entries(rule as Record<string, unknown>).map(([key, value]) => ({
+      label: key
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .replace(/[_-]+/g, ' ')
+        .replace(/^./, (character) => character.toUpperCase()),
+      value: this.formatStrategyValue(value),
+    }));
+  }
+
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -36,5 +52,18 @@ export class PortfolioDetailPage implements OnInit {
         error: (error: unknown) =>
           this.error.set(readableHttpError(error, 'Portfolio details are unavailable.')),
       });
+  }
+
+  private formatStrategyValue(value: unknown): string {
+    if (Array.isArray(value)) {
+      return value.map((item) => this.formatStrategyValue(item)).join(', ');
+    }
+    if (value !== null && typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No';
+    }
+    return String(value ?? 'Not specified');
   }
 }

@@ -49,6 +49,17 @@ export interface PortfolioDetails {
   unrealizedGain: number;
   unrealizedGainPercent: number;
   positions: PortfolioPosition[];
+  strategies: PortfolioStrategy[];
+}
+
+export interface PortfolioStrategy {
+  id: string;
+  accountId: string | null;
+  name: string;
+  type: string;
+  rule: unknown;
+  scope: 'portfolio' | 'global';
+  updatedAt: string | null;
 }
 
 export interface OAuthConnection {

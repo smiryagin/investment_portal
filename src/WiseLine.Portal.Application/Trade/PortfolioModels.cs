@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace WiseLine.Portal.Application.Trade;
 
 public sealed record PortfolioSummary(
@@ -19,7 +21,8 @@ public sealed record PortfolioDetails(
     decimal TotalCost,
     decimal UnrealizedGain,
     decimal UnrealizedGainPercent,
-    IReadOnlyList<PortfolioPosition> Positions);
+    IReadOnlyList<PortfolioPosition> Positions,
+    IReadOnlyList<PortfolioStrategy> Strategies);
 
 public sealed record PortfolioPosition(
     string Id,
@@ -31,3 +34,12 @@ public sealed record PortfolioPosition(
     decimal MarketValue,
     decimal UnrealizedGain,
     decimal UnrealizedGainPercent);
+
+public sealed record PortfolioStrategy(
+    Guid Id,
+    Guid? AccountId,
+    string Name,
+    string Type,
+    JsonElement Rule,
+    string Scope,
+    DateTimeOffset? UpdatedAt);

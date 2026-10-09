@@ -14,6 +14,8 @@ public sealed class TradeDatabaseOptions
 
     public string GetPortfolioProcedure { get; init; } = "invest.Portal_GetPortfolio";
 
+    public string GetPortfolioStrategiesProcedure { get; init; } = "invest.Portal_GetPortfolioStrategies";
+
     public string GetMcpTokensProcedure { get; init; } = "invest.Portal_GetMcpTokens";
 
     public string CreateMcpTokenProcedure { get; init; } = "invest.Portal_CreateMcpToken";
