@@ -1,0 +1,43 @@
+@model WiseLine.Portal.Api.Models.OAuthSubscriptionRequiredViewModel
+@{
+    Layout = null;
+}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Subscription required — WiseLine Trade</title>
+    <style>
+        :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #10251f; background: #f4f8f5; }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+        main { width: min(100%, 620px); background: white; border: 1px solid #dce7e1; border-radius: 24px; padding: 36px; box-shadow: 0 24px 70px rgba(18, 59, 43, .12); }
+        .brand { display: flex; gap: 12px; align-items: center; font-weight: 800; font-size: 20px; }
+        .mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; color: white; background: #145c45; }
+        .status { display: inline-flex; margin-top: 30px; padding: 6px 10px; border-radius: 999px; background: #fff4d6; color: #765811; font-size: 13px; font-weight: 750; }
+        h1 { margin: 14px 0 10px; font-size: clamp(30px, 5vw, 42px); letter-spacing: -.04em; }
+        p { color: #5e746c; font-size: 17px; line-height: 1.55; }
+        .notice { margin: 26px 0; padding: 16px; border: 1px solid #ead18a; border-radius: 14px; background: #fffaf0; color: #5f4b1d; font-size: 15px; line-height: 1.5; }
+        .actions { display: flex; gap: 12px; align-items: center; margin-top: 26px; }
+        .button { display: inline-flex; min-height: 50px; align-items: center; justify-content: center; padding: 0 22px; border-radius: 12px; background: #145c45; color: white; font-weight: 750; text-decoration: none; }
+        .secondary { color: #315c4d; font-size: 14px; font-weight: 700; text-decoration: none; }
+        @@media (max-width: 520px) { main { padding: 24px; } .actions { align-items: stretch; flex-direction: column; } }
+    </style>
+</head>
+<body>
+<main>
+    <div class="brand"><span class="mark">W</span> WiseLine Trade</div>
+    <span class="status">Subscription @Model.SubscriptionStatus</span>
+    <h1>Activate WiseLine before connecting @Model.ClientName</h1>
+    <p>An active subscription or trial is required to use the WiseLine Investment MCP server.</p>
+    <div class="notice" role="alert">
+        Your AI client has not been authorized. Finish subscription setup, then return to the AI client and choose Connect again.
+    </div>
+    <div class="actions">
+        <a class="button" href="/account">Activate subscription</a>
+        <a class="secondary" href="/mcp-access">Return to AI connections</a>
+    </div>
+</main>
+</body>
+</html>

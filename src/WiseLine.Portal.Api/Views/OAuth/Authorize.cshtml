@@ -23,8 +23,13 @@
         .notice { padding: 14px 16px; background: #eff8f3; border-radius: 12px; color: #315c4d; font-size: 14px; line-height: 1.45; }
         form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 26px; }
         button { min-height: 50px; border-radius: 12px; border: 1px solid #bfd1c8; font: inherit; font-weight: 750; cursor: pointer; }
+        button:disabled { cursor: wait; opacity: .72; }
         .deny { background: white; color: #314c43; }
         .allow { background: #145c45; border-color: #145c45; color: white; }
+        .button-content { display: inline-flex; gap: 9px; align-items: center; justify-content: center; }
+        .spinner { display: none; width: 17px; height: 17px; border: 2px solid rgba(255, 255, 255, .42); border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite; }
+        .allow.submitting .spinner { display: inline-block; }
+        @@keyframes spin { to { transform: rotate(360deg); } }
         @@media (max-width: 520px) { main { padding: 24px; } form { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -40,15 +45,53 @@
         }
     </ul>
     <div class="notice">WiseLine never shares your password or payment details. You can revoke this connection later.</div>
-    <form method="post">
+    <form id="authorization-form" method="post">
         @Html.AntiForgeryToken()
         @foreach (var parameter in Model.RequestParameters)
         {
             <input type="hidden" name="@parameter.Name" value="@parameter.Value" />
         }
         <button class="deny" type="submit" name="decision" value="deny">Cancel</button>
-        <button class="allow" type="submit" name="decision" value="allow">Allow connection</button>
+        <button id="allow-connection" class="allow" type="submit" name="decision" value="allow">
+            <span class="button-content"><span class="spinner" aria-hidden="true"></span><span class="button-label">Allow connection</span></span>
+        </button>
     </form>
 </main>
+<script>
+    (() => {
+        const form = document.getElementById('authorization-form');
+        const allowButton = document.getElementById('allow-connection');
+        if (!form || !allowButton) return;
+
+        let submitting = false;
+        form.addEventListener('submit', (event) => {
+            if (submitting) {
+                event.preventDefault();
+                return;
+            }
+
+            submitting = true;
+            const submitter = event.submitter;
+            if (submitter instanceof HTMLButtonElement) {
+                const decision = document.createElement('input');
+                decision.type = 'hidden';
+                decision.name = 'decision';
+                decision.value = submitter.value;
+                form.appendChild(decision);
+            }
+
+            for (const button of form.querySelectorAll('button')) {
+                button.disabled = true;
+            }
+
+            if (submitter === allowButton) {
+                allowButton.classList.add('submitting');
+                allowButton.setAttribute('aria-busy', 'true');
+                const label = allowButton.querySelector('.button-label');
+                if (label) label.textContent = 'Connecting…';
+            }
+        });
+    })();
+</script>
 </body>
 </html>

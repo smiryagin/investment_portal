@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
+using WiseLine.Portal.Application.Subscriptions;
 using WiseLine.Portal.Api.Models;
 using WiseLine.Portal.Api.OAuth;
 using WiseLine.Portal.Infrastructure.Identity;
@@ -22,6 +23,7 @@ public sealed class OAuthController(
     IOpenIddictApplicationManager applicationManager,
     IOpenIddictAuthorizationManager authorizationManager,
     UserManager<PortalUser> userManager,
+    ISubscriptionAccessService subscriptionAccessService,
     IOptions<OAuthServerOptions> options,
     TimeProvider timeProvider,
     ILogger<OAuthController> logger) : Controller
@@ -61,6 +63,25 @@ public sealed class OAuthController(
         var displayName = await applicationManager.GetDisplayNameAsync(application, cancellationToken)
             ?? request.ClientId
             ?? "AI client";
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+        {
+            return Challenge(IdentityConstants.ApplicationScheme);
+        }
+
+        var subscription = await subscriptionAccessService.GetOrCreateAsync(
+            user.Id,
+            cancellationToken);
+        if (!subscription.IsEntitled)
+        {
+            logger.LogInformation(
+                "OAuth authorization was blocked for portal user {PortalUserId} and client {ClientId} because subscription status {SubscriptionStatus} is not entitled.",
+                user.Id,
+                request.ClientId ?? "unknown",
+                subscription.Status);
+            return SubscriptionRequired(displayName, subscription.Status);
+        }
+
         return View(new OAuthAuthorizationViewModel(
             displayName,
             DescribeScopes(request.GetScopes()),
@@ -109,6 +130,22 @@ public sealed class OAuthController(
         if (application is null)
         {
             return OAuthForbid(Errors.InvalidClient, "The requesting AI client is not approved.");
+        }
+
+        var subscription = await subscriptionAccessService.GetOrCreateAsync(
+            user.Id,
+            cancellationToken);
+        if (!subscription.IsEntitled)
+        {
+            var displayName = await applicationManager.GetDisplayNameAsync(application, cancellationToken)
+                ?? request.ClientId
+                ?? "AI client";
+            logger.LogInformation(
+                "OAuth authorization was blocked for portal user {PortalUserId} and client {ClientId} because subscription status {SubscriptionStatus} is not entitled.",
+                user.Id,
+                request.ClientId ?? "unknown",
+                subscription.Status);
+            return SubscriptionRequired(displayName, subscription.Status);
         }
 
         var applicationId = await applicationManager.GetIdAsync(application, cancellationToken)
@@ -169,6 +206,22 @@ public sealed class OAuthController(
         if (user is null || await userManager.IsLockedOutAsync(user))
         {
             return OAuthForbid(Errors.InvalidGrant, "The WiseLine account is no longer available.");
+        }
+
+        var subscription = await subscriptionAccessService.GetOrCreateAsync(
+            user.Id,
+            HttpContext.RequestAborted);
+        if (!subscription.IsEntitled)
+        {
+            logger.LogInformation(
+                "OAuth {GrantType} exchange was blocked for portal user {PortalUserId} and client {ClientId} because subscription status {SubscriptionStatus} is not entitled.",
+                request.GrantType,
+                user.Id,
+                request.ClientId ?? "unknown",
+                subscription.Status);
+            return OAuthForbid(
+                Errors.InvalidGrant,
+                "An active WiseLine subscription is required. Activate your subscription, then reconnect the AI client.");
         }
 
         if (!OAuthAuthorizationSession.TryGetStartedAt(authenticatedPrincipal, out var startedAt) ||
@@ -284,4 +337,12 @@ public sealed class OAuthController(
                 [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = description
             }),
             OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+
+    private ViewResult SubscriptionRequired(string clientName, string subscriptionStatus)
+    {
+        Response.StatusCode = StatusCodes.Status403Forbidden;
+        return View(
+            "SubscriptionRequired",
+            new OAuthSubscriptionRequiredViewModel(clientName, subscriptionStatus));
+    }
 }
